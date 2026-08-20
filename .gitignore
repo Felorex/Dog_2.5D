@@ -1,0 +1,17 @@
+# Папки, создаваемые движком автоматически
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+
+# Файлы Visual Studio / IDE
+*.sln
+*.suo
+*.VC.db
+*.VC.opendb
+
+# Системные файлы
+.DS_Store
+Thumbs.db
