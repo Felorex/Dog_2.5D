@@ -132,6 +132,9 @@ public:
 
 	void CheckGrounded();
 
+	float CalculateAlignmentDeltaX() const;
+	bool PreCheckAlignmentSpace();
+
 	void UpdatePositionY(float DeltaTime);
 	void InteractMovementX();
 	void CanInteractWithBox();

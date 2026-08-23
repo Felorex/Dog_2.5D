@@ -117,8 +117,8 @@ bool ADogPawn::CanMoveWithHead(float DeltaX)
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		ActorsToIgnore,
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
 		HitResult,
 		true
 	);
@@ -202,8 +202,8 @@ void ADogPawn::CheckGrounded()
 		ObjectTypes,
 		false,
 		TArray<AActor*>({ this }),
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
 		HitResult,
 		true
 	);
@@ -279,6 +279,7 @@ void ADogPawn::CheckBoxUnderfoot()
 		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
 		false,
 		ActorToIgnore,
+		//EDrawDebugTrace::None,
 		EDrawDebugTrace::ForDuration,
 		Result,
 		true
@@ -402,8 +403,8 @@ void ADogPawn::CanInteractWithBox()
 		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
 		false,
 		ActorsToIgnore,
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
 		Result,
 		true
 	);
@@ -429,6 +430,8 @@ void ADogPawn::InteractPressed()
 	{
 		if (GetActorLocation().Z > Box->GetBoxEdgeZ()) return;
 
+		if (!PreCheckAlignmentSpace()) return;
+
 		bIsInteracting = true;
 		CollisionHead->IgnoreActorWhenMoving(Box, true);
 		Box->StartFollow(this);
@@ -446,18 +449,50 @@ void ADogPawn::InteractReleased()
 		OnStopInteractVisual();
 	}
 }
-void ADogPawn::InteractMovementX()
+float ADogPawn::CalculateAlignmentDeltaX() const
 {
-	if (!bIsInteracting || !Box || !CollisionHead) return;
+	if (!Box || !CollisionHead) return 0.f;
 
 	float DogDirection = FMath::Sign(Conteiner->GetForwardVector().X);
 
-	float BoxCenter = Box->GetActorLocation().X;
 	float BoxWall = (DogDirection > 0.f) ? Box->GetBoxLeftEdgeX() : Box->GetBoxRightEdgeX();
+
+	return BoxWall - GetHeadEdgeX();
+}
+bool ADogPawn::PreCheckAlignmentSpace()
+{
+	if (!Box || !CollisionHead) return true;
+
+	float DeltaX = CalculateAlignmentDeltaX();
+
+	if (FMath::IsNearlyEqual(DeltaX, 1.f)) return true;
+
+	FHitResult HitResult;
+
+	AddActorWorldOffset(FVector(DeltaX, 0.f, 0.f), true, &HitResult);
+
+	if (HitResult.IsValidBlockingHit())
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (HitActor && HitActor->IsA(AInteractiveBox::StaticClass()) == false)
+		{
+			float RealMovedDistance = DeltaX * HitResult.Time;
+			AddActorWorldOffset(FVector(-RealMovedDistance, 0.f, 0.f), false);
+			return false;
+		}
+		
+	}
+	AddActorWorldOffset(FVector(-DeltaX, 0.f, 0.f), false);
+	return true;
+}
+void ADogPawn::InteractMovementX()
+{
+	if (!bIsInteracting || !Box || !CollisionHead) return;
 	
-	float DeltaX = BoxWall - GetHeadEdgeX();
+	float DeltaX = CalculateAlignmentDeltaX();
 
 	AddActorWorldOffset(FVector(DeltaX, 0.f, 0.f), false);
+
 }
 void ADogPawn::ForceStopMovement()
 {
@@ -560,8 +595,8 @@ bool ADogPawn::CanStandUp()
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		TArray<AActor*>({ this }),
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		//EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
 		HitBodyResult,
 		true,
 		FLinearColor::Red,
