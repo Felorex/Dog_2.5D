@@ -7,6 +7,15 @@ Custom character (Pawn) movement physics and interactive object (box) interactio
 \##Video:
 
 
+
+https://github.com/user-attachments/assets/e42f6fed-ef22-41dc-8758-de8d645ec504
+
+
+
+
+
+
+
 \## Implemented Architectural Solutions \& Fixes:
 
 
