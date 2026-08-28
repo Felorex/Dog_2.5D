@@ -137,8 +137,6 @@ void AInteractiveBox::CheckWallCollision(const FHitResult& Hit)
 		IsBoxBlocked = false;
 		return;
 	}
-		
-	float PlayerInput = Player->GetVelocityX();
 
 	if (IsBoxBlocked && Player->GetIsPulling())
 	{

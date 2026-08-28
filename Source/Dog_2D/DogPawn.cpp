@@ -455,7 +455,8 @@ float ADogPawn::CalculateAlignmentDeltaX() const
 
 	float DogDirection = FMath::Sign(Conteiner->GetForwardVector().X);
 
-	float BoxWall = (DogDirection > 0.f) ? Box->GetBoxLeftEdgeX() : Box->GetBoxRightEdgeX();
+	float BoxWall = (DogDirection > 0.f) ? Box->GetBoxLeftEdgeX() :
+		Box->GetBoxRightEdgeX();
 
 	return BoxWall - GetHeadEdgeX();
 }
@@ -770,13 +771,7 @@ void ADogPawn::Tick(float DeltaTime)
 		TryStandUp();
 	}
 
-	FString BoxStatus = Box ? FString::Printf(TEXT("Box - VALID (%s)"), *Box->GetName()) : FString("Box - NULLPTR");
-	FString JumpStatus = IsJumping ? FString("Jump - TRUE") : FString("Jump - FALSE");
-	FString GroundStatus = IsGrounded ? FString("Grounded - TRUE") : FString("Grounded - FALSE");
-
-	GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::Blue, BoxStatus);
-	GEngine->AddOnScreenDebugMessage(2, 0.f, FColor::Orange, JumpStatus);
-	GEngine->AddOnScreenDebugMessage(3, 0.f, FColor::Green, GroundStatus);
+	
 }
 
 // Called to bind functionality to input

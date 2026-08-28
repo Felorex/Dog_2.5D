@@ -1,9 +1,10 @@
 \# Custom 2.5D Movement \& Object Interaction System (Unreal Engine C++ / Blueprints)
 
-
+A more advanced iteration of the same first level from my 2D Dog Platformer prototype (https://github.com/Felorex/prototype-2D-platformer), rebuilt in Unreal Engine to explore custom 2.5D movement and object interaction — implemented from scratch instead of relying on the standard CharacterMovementComponent.
 
 Custom character (Pawn) movement physics and interactive object (box) interaction mechanics in 2.5D space, implemented without the standard CharacterMovementComponent.
 
+\##Video:
 
 
 \## Implemented Architectural Solutions \& Fixes:
