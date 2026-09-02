@@ -4,7 +4,16 @@ A more advanced iteration of the same first level from my 2D Dog Platformer prot
 
 Custom character (Pawn) movement physics and interactive object (box) interaction mechanics in 2.5D space, implemented without the standard CharacterMovementComponent.
 
-\##Video:
+\## Video:
+
+
+
+https://github.com/user-attachments/assets/e42f6fed-ef22-41dc-8758-de8d645ec504
+
+
+
+
+
 
 
 \## Implemented Architectural Solutions \& Fixes:
