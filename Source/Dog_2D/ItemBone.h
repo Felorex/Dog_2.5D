@@ -22,6 +22,7 @@ protected:
 
 	float VelocityZ;
 	float VelocityX;
+	float Gravity;
 
 	bool IsOnGround();
 

@@ -45,12 +45,6 @@ protected:
 	float OriginalY;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
-	float TargetY;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
-	float InterSpeed;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
 	UPrimitiveComponent* BoxComponent;
 
 
@@ -67,9 +61,7 @@ public:
 
 	void UpdatePhysics(float DeltaTime);
 	void UpdateMovementX();
-	void UpdateMovementY(float DeltaTime);
 	void CheckWallCollision(const FHitResult& Hit);
-	void CheckReturnToOriginalY();
 	bool GetIsBoxBlocked() { return IsBoxBlocked; }
 
 	float GetBoxEdgeY() const;

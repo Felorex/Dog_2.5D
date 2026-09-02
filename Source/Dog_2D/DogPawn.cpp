@@ -22,7 +22,7 @@ ADogPawn::ADogPawn()
 
 	IsGrounded = false;	
 	
-	InteractDistance = 110.f;
+	InteractDistance = 100.f;
 	Gravity = -980.0f; 
 	VelocityZ = 0.0f;
 	VelocityX = 0.0f;

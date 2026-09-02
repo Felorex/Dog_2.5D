@@ -14,7 +14,7 @@ AItemBone::AItemBone()
 
 	VelocityZ = 0.0f;
 	VelocityX = 0.f;
-
+	Gravity = -980.0f;
 }
 
 bool AItemBone::IsOnGround()
@@ -46,6 +46,14 @@ void AItemBone::UpdatePhysics(float DeltaTime)
 	// Implementation for physics updates
 	if (!BoneComponent) return;
 
+	if (!IsOnGround())
+	{
+		VelocityZ += Gravity * DeltaTime;
+	}
+	else
+	{
+		VelocityZ = 0.0f;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -61,5 +69,11 @@ void AItemBone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdatePhysics(DeltaTime);
+
+	float DeltaZ = VelocityZ * DeltaTime;
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("VelocityZ: %f, CurrentZ: %f"), VelocityZ, GetActorLocation().Z));
+	AddActorWorldOffset(FVector(0.0f, 0.0f, DeltaZ), true);
 }
 

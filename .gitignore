@@ -7,6 +7,7 @@ Saved/
 .vs/
 
 # Файлы Visual Studio / IDE
+*.slnx
 *.sln
 *.suo
 *.VC.db

@@ -18,7 +18,6 @@ AInteractiveBox::AInteractiveBox()
 	IsBoxBlocked = false;
 	LastMoving = false;
 	OriginalY = 0.0f;
-	InterSpeed = 5.0f;
 
 	BoxVelocityX = 0.0f;
 	BoxVelocityZ = 0.0f;
