@@ -18,11 +18,9 @@ AInteractiveBox::AInteractiveBox()
 	IsBoxBlocked = false;
 	LastMoving = false;
 	OriginalY = 0.0f;
-	TargetY = 0.0f;
 	InterSpeed = 5.0f;
 
 	BoxVelocityX = 0.0f;
-	BoxVelocityY = 0.0f;
 	BoxVelocityZ = 0.0f;
 	GravityScale = 2000.0f;
 }
@@ -199,7 +197,6 @@ void AInteractiveBox::BeginPlay()
 	BoxComponent = Cast<UPrimitiveComponent>(GetRootComponent());
 
 	OriginalY = GetActorLocation().Y;
-	TargetY = OriginalY;
 }
 
 
