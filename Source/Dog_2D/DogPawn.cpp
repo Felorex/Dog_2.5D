@@ -20,6 +20,9 @@ ADogPawn::ADogPawn()
 	bIsPushing = false;
 	bIsPulling = false;
 
+	bWantToTakeItem = false;
+	IsTakingItem = false;
+
 	IsGrounded = false;	
 	
 	InteractDistance = 100.f;
@@ -30,6 +33,7 @@ ADogPawn::ADogPawn()
 	CrouchSpeed = 150.f;
 	JumpForce = 600.0f;
 
+	Bone = nullptr;
 	Box = nullptr;
 	CollisionBody = nullptr;
 	CollisionHead = nullptr;
@@ -247,7 +251,7 @@ void ADogPawn::DoJump()
 			CheckBoxTimer,
 			this,
 			&ADogPawn::CheckBoxUnderfoot,
-			0.03,
+			0.03f,
 			true
 		);
 	}
@@ -279,8 +283,8 @@ void ADogPawn::CheckBoxUnderfoot()
 		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
 		false,
 		ActorToIgnore,
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
 		Result,
 		true
 	);
@@ -361,9 +365,9 @@ void ADogPawn::CheckJumpExecution()
 	}
 }
 
-void ADogPawn::CanInteractWithBox()
+void ADogPawn::CanInteractWithObjects()
 {
-	if (bIsInteracting || IsCrouching || IsJumping) return;
+	if (bIsInteracting || IsCrouching || IsJumping || IsTakingItem) return;
 
 	FVector LookDirection = GetActorForwardVector();
 	FRotator TraceRotation = GetActorRotation();
@@ -384,10 +388,15 @@ void ADogPawn::CanInteractWithBox()
 		float DogDirecion = FMath::Sign(LookDirection.X);
 
 		StartLocation.X = BodyCenter + (BodyHalf * DogDirecion);
+		
 	}
 
 	FVector EndLocation = StartLocation + (LookDirection * InteractDistance);
-	FVector BoxHalfExtent = FVector(30.0f, 120.0f, 40.0f);
+
+	StartLocation.Z += 5.f;
+	EndLocation.Z += 2.f;
+
+	FVector BoxHalfExtent = FVector(30.0f, 120.0f, 65.f);
 
 	FHitResult Result;
 
@@ -403,8 +412,8 @@ void ADogPawn::CanInteractWithBox()
 		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		//EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
 		Result,
 		true
 	);
@@ -416,13 +425,31 @@ void ADogPawn::CanInteractWithBox()
 		if (FoundBox)
 		{
 			Box = FoundBox;
+			Bone = nullptr;
+			return;
+		}
+
+		AItemBone* FoundBone = Cast<AItemBone>(Result.GetActor());
+
+		if (FoundBone)
+		{
+			Bone = FoundBone;
+			Box = nullptr;
 			return;
 		}
 	}
-	if (!bIsInteracting)
+	else 
 	{
-		Box = nullptr;
+		if (!bIsInteracting)
+		{
+			Box = nullptr;
+		}
+		if (!IsTakingItem)
+		{
+			Bone = nullptr;
+		}
 	}
+	
 }
 void ADogPawn::InteractPressed()
 {
@@ -503,6 +530,46 @@ void ADogPawn::ForceStopMovement()
 void ADogPawn::ClearInteractiveBox()
 {
 	Box = nullptr;
+}
+
+void ADogPawn::TakeItemPressed()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("PRESSED")));
+	if (!Bone)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("BONE IS NULL")));
+		return;
+	}
+	bWantToTakeItem = true;
+
+	if (WantToTakeItem())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Can take item")));
+		IsTakingItem = true;
+	}
+}
+bool ADogPawn::WantToTakeItem()
+{
+	if (!Bone || !bWantToTakeItem) return false;
+
+	if (Bone->TryTake(this))
+	{
+		return true;
+
+	}
+	return false;
+}
+void ADogPawn::TakeItemReleased()
+{
+	bWantToTakeItem = false;
+	
+	ClearItemBone();
+}
+void ADogPawn::ClearItemBone()
+{
+	Bone = nullptr;
+	IsTakingItem = false;
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Item Bone Cleared")));
 }
 
 void ADogPawn::OnCrouchPressed()
@@ -736,7 +803,7 @@ void ADogPawn::BeginPlay()
 	GetWorldTimerManager().SetTimer(
 		InteractTimer,
 		this,
-		&ADogPawn::CanInteractWithBox,
+		&ADogPawn::CanInteractWithObjects,
 		0.1f,
 		true
 	);
@@ -771,6 +838,7 @@ void ADogPawn::Tick(float DeltaTime)
 		TryStandUp();
 	}
 
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("BONE %s"), Bone ? *Bone->GetName() : *FString("None")));
 	
 }
 

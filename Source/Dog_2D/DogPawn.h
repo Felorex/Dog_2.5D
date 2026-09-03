@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 
 #include "InteractiveBox.h"
+#include "ItemBone.h"
 
 #include "DogPawn.generated.h"
 
@@ -25,6 +26,8 @@ protected:
 
 	AInteractiveBox* Box;
 
+	AItemBone* Bone;
+
 	USceneComponent* Conteiner;
 
 	USceneComponent* CameraComp;
@@ -35,6 +38,9 @@ protected:
 	float OriginalExtentHeadZ;
 	float CrouchedScaleBodyZ;
 	float CrouchedScaleHeadZ;
+
+	bool bWantToTakeItem;
+	bool IsTakingItem;
 
 	bool bWantToJump;
 	float OriginalY;
@@ -118,6 +124,11 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
 	void OnStopInteractVisual();
 
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void TakeItemPressed();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void TakeItemReleased();
 	
 
 	// Called every frame
@@ -137,7 +148,7 @@ public:
 
 	void UpdatePositionY(float DeltaTime);
 	void InteractMovementX();
-	void CanInteractWithBox();
+	void CanInteractWithObjects();
 	void CheckBoxUnderfoot();	
 	void CheckJumpExecution();
 
@@ -160,5 +171,10 @@ public:
 
 	void ForceStopMovement();
 	void ClearInteractiveBox();
+
+	bool WantToTakeItem();
+	void ClearItemBone();
+
+
 	
 };

@@ -6,6 +6,10 @@
 #include "GameFramework/Actor.h"
 #include "ItemBone.generated.h"
 
+
+class ADogPawn;
+
+
 UCLASS()
 class DOG_2D_API AItemBone : public AActor
 {
@@ -17,12 +21,18 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Taken")
 	UPrimitiveComponent* BoneComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Taken")
+	ADogPawn* Player;
 
 	float VelocityZ;
 	float VelocityX;
 	float Gravity;
+
+	bool IsTaking;
+	bool IsFalling;
 
 	bool IsOnGround();
 
@@ -30,6 +40,9 @@ protected:
 
 public:	
 	// Called every frame
+
+	bool TryTake(ADogPawn* NewPlayer);
+
 	void UpdatePhysics(float DeltaTime);
 	virtual void Tick(float DeltaTime) override;
 

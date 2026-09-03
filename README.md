@@ -56,3 +56,14 @@ https://github.com/user-attachments/assets/e42f6fed-ef22-41dc-8758-de8d645ec504
 
 \* Camera Y-lock: Inside the C++ Tick, a performant world-space Y-coordinate lock is applied to the Blueprint SpringArm component (`WorldLocation.Y = OriginalY`) based on a pointer saved in BeginPlay. The screen smoothly follows the character along the X and Z axes while fully ignoring depth-axis drift.
 
+
+
+\### 5. Autonomous Item Physics \& Multi-Channel Interaction Scan
+
+\* Multi-Channel Search Tool: Upgraded the shared interaction trace inside CanInteractWithObjects from a single hit to a vertically elongated BoxTraceMulti (dimensions: X=30, Y=30, Z=65, with a core Z-offset +5.0f). This allows the dog to scan the world for both boxes and small items simultaneously.
+
+\* Loose Coupling & "Anti-Cheat" Raycast: Implemented a standalone TryTake impulse logic inside the AItemBone class. Upon a pick-up click, the bone fires a 60cm raycast strictly upward (ignoring the floor via a +15.0f Z-start offset). If a dynamic object (like a heavy box) is detected directly above, the bone rejects the pick-up and safely nullifies the character's focus pointer via ClearItemBone(), completely preventing players from grabbing hidden items through solid walls.
+
+\* State Matrix Enforcement: Designed an else-driven memory block that perfectly handles interaction priorities. If the dog is moving a box, item detection shuts down; if an item is grabbed, the dog becomes "blind" to boxes. All pointers are instantly erased from memory the moment the object leaves the trace area, eliminating "phantom actions" at a distance.
+
+\* Performance Optimization (Tick Sleep): Built a self-contained gravity loop inside the bone. Using GetActorBounds, the bone calculates its precise half-height in world space, enabling a +5.0f ground trace to accurately read the floor even when the bone mesh is rotated 90 degrees horizontally. Once the bone safely lands, its C++ velocity is zeroed, and its per-frame update is put to sleep (SetActorTickEnabled(false)) to save CPU cycles until the next interaction.
