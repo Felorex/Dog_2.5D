@@ -30,17 +30,19 @@ protected:
 
 	USceneComponent* Conteiner;
 
+	USceneComponent* MouthComp;
+
 	USceneComponent* CameraComp;
 
 	UBoxComponent* CollisionBody;
 	UBoxComponent* CollisionHead;
+
 	float OriginalExtentBodyZ;
 	float OriginalExtentHeadZ;
 	float CrouchedScaleBodyZ;
 	float CrouchedScaleHeadZ;
 
 	bool bWantToTakeItem;
-	bool IsTakingItem;
 
 	bool bWantToJump;
 	float OriginalY;
@@ -75,6 +77,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_Movement")
 	bool bIsInteracting;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Taken")
+	bool bIsTakingItem;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Crouch")
 	bool bWantToCrouch;
@@ -127,9 +132,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "TakeItem")
 	void TakeItemPressed();
 
-	UFUNCTION(BlueprintCallable, Category = "TakeItem")
-	void TakeItemReleased();
+	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
+	void OnPickupVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
+	void OnDropVisual();
 	
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void AttachItemToMouth();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void DetachItemFromMouth();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -20,8 +20,7 @@ ADogPawn::ADogPawn()
 	bIsPushing = false;
 	bIsPulling = false;
 
-	bWantToTakeItem = false;
-	IsTakingItem = false;
+	bIsTakingItem = false;
 
 	IsGrounded = false;	
 	
@@ -367,7 +366,7 @@ void ADogPawn::CheckJumpExecution()
 
 void ADogPawn::CanInteractWithObjects()
 {
-	if (bIsInteracting || IsCrouching || IsJumping || IsTakingItem) return;
+	if (bIsInteracting || IsCrouching || IsJumping || bIsTakingItem) return;
 
 	FVector LookDirection = GetActorForwardVector();
 	FRotator TraceRotation = GetActorRotation();
@@ -444,7 +443,7 @@ void ADogPawn::CanInteractWithObjects()
 		{
 			Box = nullptr;
 		}
-		if (!IsTakingItem)
+		if (!bIsTakingItem)
 		{
 			Bone = nullptr;
 		}
@@ -534,42 +533,63 @@ void ADogPawn::ClearInteractiveBox()
 
 void ADogPawn::TakeItemPressed()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("PRESSED")));
-	if (!Bone)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("BONE IS NULL")));
-		return;
-	}
-	bWantToTakeItem = true;
+	if (!Bone) return;
 
-	if (WantToTakeItem())
+	if (!bIsTakingItem)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Can take item")));
-		IsTakingItem = true;
+		if (WantToTakeItem())
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Can take item")));
+
+			OnPickupVisual();
+		}
 	}
+	else
+	{
+		OnDropVisual();
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Deleted item")));
+	}	
 }
 bool ADogPawn::WantToTakeItem()
 {
-	if (!Bone || !bWantToTakeItem) return false;
+	if (!Bone) return false;
 
 	if (Bone->TryTake(this))
 	{
 		return true;
-
 	}
 	return false;
-}
-void ADogPawn::TakeItemReleased()
-{
-	bWantToTakeItem = false;
-	
-	ClearItemBone();
 }
 void ADogPawn::ClearItemBone()
 {
 	Bone = nullptr;
-	IsTakingItem = false;
+	bIsTakingItem = false;
 	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Item Bone Cleared")));
+}
+void ADogPawn::AttachItemToMouth()
+{
+	if (!Bone || !MouthComp || bIsTakingItem) return;
+
+	Bone->DisablePhysics();
+
+	FAttachmentTransformRules AttachRules(
+		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::KeepWorld,
+		false
+	);
+	Bone->AttachToComponent(MouthComp, AttachRules);
+
+	bIsTakingItem = true;
+}
+void ADogPawn::DetachItemFromMouth()
+{
+	if (!Bone || !MouthComp || !bIsTakingItem) return;
+	
+	Bone->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+	Bone->EnablePhysics();
+	ClearItemBone();
 }
 
 void ADogPawn::OnCrouchPressed()
@@ -784,8 +804,10 @@ void ADogPawn::BeginPlay()
 
 	Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
 	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
+	MouthComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("MouthAttachPoint")));
 	CollisionBody = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("BodyCollision")));
 	CollisionHead = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("HeadCollision")));
+
 
 	OriginalExtentBodyZ = CollisionBody->GetUnscaledBoxExtent().Z;
 	OriginalExtentHeadZ = CollisionHead->GetUnscaledBoxExtent().Z;

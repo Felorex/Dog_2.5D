@@ -36,7 +36,7 @@ bool AItemBone::IsOnGround()
 	GetActorBounds(false, Origin, BoxExtent);
 	float HalfHeight = BoxExtent.Z;
 
-	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 5.f);
+	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 2.f);
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
@@ -62,34 +62,13 @@ void AItemBone::UpdatePhysics(float DeltaTime)
 
 	if (!IsOnGround())
 	{
-		SetActorTickEnabled(true);
 		VelocityZ += Gravity * DeltaTime;
 	}
 	else
 	{
 		VelocityZ = 0.0f;
 		SetActorTickEnabled(false);
-	}
-
-
-	/*VelocityZ += Gravity * DeltaTime;
-
-	float DeltaZ = VelocityZ * DeltaTime;
-	FVector DeltaLocation = FVector(0.0f, 0.0f, DeltaZ);
-
-	FHitResult HitResult;
-
-	AddActorLocalOffset(DeltaLocation, true, &HitResult);
-
-	if (HitResult.IsValidBlockingHit())
-	{
-		if (VelocityZ < 0.f)
-		{
-			VelocityZ = 0.0f;
-			SetActorTickEnabled(false);
-		}
-	}*/
-	
+	}	
 }
 
 bool AItemBone::TryTake(ADogPawn* NewPlayer)
@@ -128,6 +107,24 @@ bool AItemBone::TryTake(ADogPawn* NewPlayer)
 		return false;
 	}
 	return true;
+}
+void AItemBone::DisablePhysics()
+{
+	if (BoneComponent)
+	{
+		BoneComponent->SetSimulatePhysics(false);
+		BoneComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+void AItemBone::EnablePhysics()
+{
+	if (BoneComponent)
+	{
+		BoneComponent->SetSimulatePhysics(true);
+		BoneComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		SetActorTickEnabled(true);
+	}
 }
 
 // Called when the game starts or when spawned

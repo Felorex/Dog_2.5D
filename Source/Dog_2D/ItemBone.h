@@ -43,6 +43,9 @@ public:
 
 	bool TryTake(ADogPawn* NewPlayer);
 
+	void DisablePhysics();
+	void EnablePhysics();
+
 	void UpdatePhysics(float DeltaTime);
 	virtual void Tick(float DeltaTime) override;
 
