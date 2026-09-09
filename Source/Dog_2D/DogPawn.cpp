@@ -807,7 +807,7 @@ void ADogPawn::BeginPlay()
 	MouthComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("MouthAttachPoint")));
 	CollisionBody = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("BodyCollision")));
 	CollisionHead = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("HeadCollision")));
-
+	MeshHead = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("Head")));
 
 	OriginalExtentBodyZ = CollisionBody->GetUnscaledBoxExtent().Z;
 	OriginalExtentHeadZ = CollisionHead->GetUnscaledBoxExtent().Z;
@@ -860,6 +860,13 @@ void ADogPawn::Tick(float DeltaTime)
 		TryStandUp();
 	}
 
+	if (MeshHead)
+	{
+		FVector Loc = MeshHead->GetRelativeLocation();
+		FRotator Rot = MeshHead->GetRelativeRotation();
+
+		GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::Green, FString::Printf(TEXT("MeshHead - Location: %s, Rotation: %s"), *Loc.ToString(), *Rot.ToString()));
+	}
 	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("BONE %s"), Bone ? *Bone->GetName() : *FString("None")));
 	
 }

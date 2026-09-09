@@ -67,3 +67,14 @@ https://github.com/user-attachments/assets/e42f6fed-ef22-41dc-8758-de8d645ec504
 \* State Matrix Enforcement: Designed an else-driven memory block that perfectly handles interaction priorities. If the dog is moving a box, item detection shuts down; if an item is grabbed, the dog becomes "blind" to boxes. All pointers are instantly erased from memory the moment the object leaves the trace area, eliminating "phantom actions" at a distance.
 
 \* Performance Optimization (Tick Sleep): Built a self-contained gravity loop inside the bone. Using GetActorBounds, the bone calculates its precise half-height in world space, enabling a +5.0f ground trace to accurately read the floor even when the bone mesh is rotated 90 degrees horizontally. Once the bone safely lands, its C++ velocity is zeroed, and its per-frame update is put to sleep (SetActorTickEnabled(false)) to save CPU cycles until the next interaction.
+
+
+\### 6. Advanced Item Pickup \& Mouth Attachment System
+
+\* State-Driven Toggle Interaction: Rewrote the interaction button mapping on the `Started` event layer to eliminate complex nested variables. A robust C++ input toggle evaluates `bIsTakingItem`. If empty, it initiates the pickup sequence; if true, it immediately triggers the dropping state, decoupling hold/release input dependencies.
+
+\* Encapsulated Physics Suspension: Adhered to strict encapsulation principles where the `AItemBone` manages its own internal state. When picked up, the character requests a physics suspension, and the bone completely shuts down its own simulation (`SetSimulatePhysics(false)`) and responses (`ECollisionEnabled::NoCollision`), becoming completely non-intrusive to the dog's movement.
+
+\* Hierarchical Socket Component Binding: Created a dedicated `USceneComponent` (`MouthAttachPoint`) attached directly to the dog's head collision. Items are dynamically nested into this component using `FAttachmentTransformRules::SnapToTarget`, eliminating frame-by-frame coordinate math and allowing the item mesh to automatically mirror head movements.
+
+\* Sub-Millimeter Floating-Point Synchronization Fix: Fixed a critical bug where physics-based interaction with heavy boxes would seize or stutter after an item was dropped. The root cause was isolated to an evaluation mismatch: the pickup/drop Blueprint timelines failed to restore the head mesh to its exact default local position due to floating-point rounding errors (returning `Z=0.0` or a sign-flipped `-0` value instead of the factory default `Z=0.6`). Adjusting the timeline's baseline targets to a rigid `0.6` value successfully eliminated collision desynchronization, restoring 100% smooth box movement.

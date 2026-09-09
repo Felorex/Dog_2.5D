@@ -37,6 +37,8 @@ protected:
 	UBoxComponent* CollisionBody;
 	UBoxComponent* CollisionHead;
 
+	UStaticMeshComponent* MeshHead;
+
 	float OriginalExtentBodyZ;
 	float OriginalExtentHeadZ;
 	float CrouchedScaleBodyZ;
