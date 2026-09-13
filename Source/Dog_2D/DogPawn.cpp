@@ -397,6 +397,7 @@ void ADogPawn::CanInteractWithObjects()
 
 	FVector BoxHalfExtent = FVector(30.0f, 120.0f, 65.f);
 
+	ETraceTypeQuery InteractTraceChannel = UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel2);
 	FHitResult Result;
 
 	TArray<AActor*> ActorsToIgnore;
@@ -408,7 +409,7 @@ void ADogPawn::CanInteractWithObjects()
 		EndLocation,
 		BoxHalfExtent,
 		TraceRotation,
-		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
+		InteractTraceChannel,
 		false,
 		ActorsToIgnore,
 		//EDrawDebugTrace::None,
