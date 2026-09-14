@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
 
+#include "BaseDogPawn.h"
 #include "InteractiveBox.h"
 #include "ItemBone.h"
 
@@ -14,7 +15,7 @@
 
 
 UCLASS()
-class DOG_2D_API ADogPawn : public APawn
+class DOG_2D_API ADogPawn : public ABaseDogPawn
 {
 	GENERATED_BODY()
 

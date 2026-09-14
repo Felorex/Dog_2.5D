@@ -128,6 +128,25 @@ void AItemBone::BeginPlay()
 	Super::BeginPlay();
 	
 	BoneComponent = Cast<UPrimitiveComponent>(GetRootComponent());
+
+	FVector StartLocation = GetActorLocation();
+
+	FTimerHandle* IntegralTimerHandle = new FTimerHandle;
+
+	GetWorldTimerManager().SetTimer(*IntegralTimerHandle, [this, StartLocation, IntegralTimerHandle]()
+		{
+			if (IsOnGround())
+			{
+				GetWorldTimerManager().ClearTimer(*IntegralTimerHandle);
+				delete IntegralTimerHandle;
+				return;
+			}
+			SetActorLocation(StartLocation);
+			VelocityZ = 0.0f;
+			SetActorTickEnabled(true);
+
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ItemBone: Reset to StartLocation"));
+		}, 0.1f, false);
 }
 
 // Called every frame
