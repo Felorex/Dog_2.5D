@@ -22,75 +22,11 @@ public:
 	// Sets default values for this pawn's properties
 	ADogPawn();	
 
-protected:
-
-	AInteractiveBox* Box;
-
-	AItemBone* Bone;
-
-	USceneComponent* Conteiner;
-
-	USceneComponent* MouthComp;
-
-	USceneComponent* CameraComp;
-
-	UBoxComponent* CollisionBody;
-	UBoxComponent* CollisionHead;
-
-	UStaticMeshComponent* MeshHead;
-
-	float OriginalExtentBodyZ;
-	float OriginalExtentHeadZ;
-	float CrouchedScaleBodyZ;
-	float CrouchedScaleHeadZ;
-
-	bool bWantToTakeItem;
-
-	bool bWantToJump;
-	float OriginalY;
-	float TargetY;
-
-	float Gravity;
-	bool IsGrounded;
-	bool IsCrouching;	
-	bool IsJumping;
-	float InteractDistance;
-	float VelocityZ;
-	float VelocityX;
-	float MoveSpeed;
-	float CrouchSpeed;
-	float JumpForce;
-
-
-	FTimerHandle InteractTimer;
-	FTimerHandle CheckBoxTimer;
-
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
-
-public:	
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_HeadAnimation")
-	bool bIsPushing;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_HeadAnimation")
-	bool bIsPulling;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_Movement")
 	bool bIsInteracting;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Taken")
-	bool bIsTakingItem;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Crouch")
-	bool bWantToCrouch;
-
-	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
-	void SetMoveDirection(float Value);
-
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
-	bool getIsGrounded() const { return IsGrounded; }
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void Move(float Value);
@@ -107,20 +43,23 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Crouch")
 	void OnCrouchPressed();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Crouch")
-	void OnCrouchVisual();
-
 	UFUNCTION(BlueprintCallable, Category = "Stand")
 	void OnCrouchReleased();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Stand")
-	void OnStandVisual();
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	void InteractPressed();
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	void InteractReleased();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void TakeItemPressed();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Crouch")
+	void OnCrouchVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Stand")
+	void OnStandVisual();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
 	void OnPushVisual();
@@ -131,49 +70,20 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
 	void OnStopInteractVisual();
 
-	UFUNCTION(BlueprintCallable, Category = "TakeItem")
-	void TakeItemPressed();
+	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
+	void SetMoveDirection(float Value);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
 	void OnPickupVisual();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
 	void OnDropVisual();
-	
+
 	UFUNCTION(BlueprintCallable, Category = "TakeItem")
 	void AttachItemToMouth();
 
 	UFUNCTION(BlueprintCallable, Category = "TakeItem")
 	void DetachItemFromMouth();
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	virtual void UpdatePhysics(float DeltaTime);
-	
-	bool CanMoveWithHead(float DeltaX);
-
-	void CheckGrounded();
-
-	float CalculateAlignmentDeltaX() const;
-	bool PreCheckAlignmentSpace();
-
-	void UpdatePositionY(float DeltaTime);
-	void InteractMovementX();
-	void CanInteractWithObjects();
-	void CheckBoxUnderfoot();	
-	void CheckJumpExecution();
-
-	void Depenetration();
-	void DepenetrationZ();
-	
-	void DoCrouch();
-	void DoStand();
-	bool CanStandUp();
-	void TryStandUp();
 
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
@@ -186,10 +96,66 @@ public:
 
 	void ForceStopMovement();
 	void ClearInteractiveBox();
-
-	bool WantToTakeItem();
 	void ClearItemBone();
 
+protected:
 
+	virtual void BeginPlay() override;
+
+	void UpdatePhysics(float DeltaTime);
+	bool getIsGrounded() const { return IsGrounded; }
+	void CheckGrounded();
+	void Depenetration();
+
+	bool CanMoveWithHead(float DeltaX);
+	void UpdatePositionY(float DeltaTime);
+	void InteractMovementX();
+	void CanInteractWithObjects();
+	void CheckBoxUnderfoot();
+	void CheckJumpExecution();
+
+	bool CanStandUp();
+	void TryStandUp();
+
+	float CalculateAlignmentDeltaX() const;
+	bool PreCheckAlignmentSpace();
+	bool WantToTakeItem();
+
+	AInteractiveBox* Box;
+	AItemBone* Bone;
+
+	USceneComponent* Conteiner;
+	USceneComponent* MouthComp;
+	USceneComponent* CameraComp;
+	UBoxComponent* CollisionBody;
+	UBoxComponent* CollisionHead;
+
+	float OriginalExtentBodyZ;
+	float OriginalExtentHeadZ;
+
+	bool bWantToJump;
+	bool IsJumping;
+	float JumpForce;
+
+	float Gravity;
+	bool IsGrounded;
+	float OriginalY;
+	float TargetY;
+
+	bool bWantToCrouch;
+	float CrouchSpeed;
+	bool IsCrouching;	
 	
+	float InteractDistance;
+	float VelocityZ;
+	float VelocityX;
+	float MoveSpeed;
+	
+	bool bIsPushing;
+	bool bIsPulling;
+
+	bool bIsTakingItem;
+
+	FTimerHandle InteractTimer;
+	FTimerHandle CheckBoxTimer;
 };

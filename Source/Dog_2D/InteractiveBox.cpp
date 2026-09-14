@@ -15,7 +15,6 @@ AInteractiveBox::AInteractiveBox()
 	Player = nullptr;
 	bIsFollowing = false;
 	IsBoxBlocked = false;
-	LastMoving = false;
 
 	BoxVelocityX = 0.0f;
 	BoxVelocityZ = 0.0f;
@@ -194,10 +193,6 @@ void AInteractiveBox::BeginPlay()
 	Super::BeginPlay();
 
 	BoxComponent = Cast<UPrimitiveComponent>(GetRootComponent());
-
-	OriginalY = GetActorLocation().Y;
-
-	
 }
 
 
@@ -206,34 +201,6 @@ void AInteractiveBox::BeginPlay()
 void AInteractiveBox::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-
-	bool bGrounded = IsOnGround();
-	FVector BoxLoc = GetActorLocation();
-
-	// Считаем реальное расстояние до земли через LineTrace для вывода на экран
-	float DistanceToGround = -1.0f;
-	if (BoxComponent)
-	{
-		FHitResult GroundHit;
-		FVector DownStart = BoxComponent->GetComponentLocation();
-		FVector DownEnd = DownStart - FVector(0.0f, 0.0f, 1000.0f); // длинный луч вниз
-		TArray<AActor*> Ignore;
-		Ignore.Add(this);
-		if (UKismetSystemLibrary::LineTraceSingle(this, DownStart, DownEnd, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, Ignore, EDrawDebugTrace::None, GroundHit, true))
-		{
-			DistanceToGround = GroundHit.Distance - BoxComponent->Bounds.BoxExtent.Z;
-		}
-	}
-
-	GEngine->AddOnScreenDebugMessage(1111, 0.0f, FColor::Cyan, FString::Printf(TEXT("=== INTERACTIVE BOX DEBUG ===")));
-	GEngine->AddOnScreenDebugMessage(1112, 0.0f, bGrounded ? FColor::Green : FColor::Red, FString::Printf(TEXT("Is On Ground: %s (Dist to floor: %.2f)"), bGrounded ? TEXT("TRUE") : TEXT("FALSE"), DistanceToGround));
-	GEngine->AddOnScreenDebugMessage(1113, 0.0f, bIsFollowing ? FColor::Orange : FColor::White, FString::Printf(TEXT("bIsFollowing: %s"), bIsFollowing ? TEXT("TRUE") : TEXT("FALSE")));
-	GEngine->AddOnScreenDebugMessage(1114, 0.0f, FColor::Yellow, FString::Printf(TEXT("Velocity X: %.2f | Velocity Z: %.2f"), BoxVelocityX, BoxVelocityZ));
-	GEngine->AddOnScreenDebugMessage(1115, 0.0f, Player ? FColor::Green : FColor::Red, FString::Printf(TEXT("Player Pointer: %s"), Player ? *Player->GetName() : TEXT("NULL")));
-	GEngine->AddOnScreenDebugMessage(1116, 0.0f, FColor::Magenta, FString::Printf(TEXT("Current Location: X=%.2f, Y=%.2f, Z=%.2f"), BoxLoc.X, BoxLoc.Y, BoxLoc.Z));
-	GEngine->AddOnScreenDebugMessage(1117, 0.0f, FColor::Cyan, FString::Printf(TEXT("=============================")));
-
 
 	if (!bIsFollowing && IsOnGround())
 	{
@@ -242,7 +209,6 @@ void AInteractiveBox::Tick(float DeltaTime)
 		SetActorTickEnabled(false);
 		return;
 	}
-
 
 	UpdatePhysics(DeltaTime);
 	UpdateMovementX();
@@ -255,22 +221,5 @@ void AInteractiveBox::Tick(float DeltaTime)
 	AddActorWorldOffset(FVector(DeltaX, 0.0f, DeltaZ), true, &HitResult);
 
 	CheckWallCollision(HitResult);
-
-	TArray<UPrimitiveComponent*> Prims;
-	GetComponents<UPrimitiveComponent>(Prims);
-
-	for (UPrimitiveComponent* Prim : Prims)
-	{
-		ECollisionEnabled::Type CollisionType = Prim->GetCollisionEnabled();
-		ECollisionChannel CollisionChannel = Prim->GetCollisionObjectType();
-		ECollisionResponse CollisionResponse = Prim->GetCollisionResponseToChannel(ECC_GameTraceChannel2);
-
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Component: %s, CollisionType: %d, CollisionChannel: %d, CollisionResponse: %s"),
-			*Prim->GetName(),
-			(int32)CollisionType,
-			(int32)CollisionChannel,
-			*UEnum::GetValueAsString(CollisionResponse)));
-	}
-	
 }
 

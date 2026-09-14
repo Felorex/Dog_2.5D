@@ -18,54 +18,37 @@ public:
 	// Sets default values for this actor's properties
 	AInteractiveBox();
 
-protected:
-
-	float BoxVelocityX;
-	float BoxVelocityY;
-	float BoxVelocityZ;
-
-	float GravityScale;
-	float MaxFallSpeed;
-
-	bool IsBoxBlocked;
-	bool LastMoving;
-
-	bool IsOnGround();
-
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
-	ADogPawn* Player;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
-	bool bIsFollowing;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
-	float OriginalY;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Follow")
-	UPrimitiveComponent* BoxComponent;
-
-
-public:	
-
-	UFUNCTION(BlueprintCallable, Category = "Follow")
-	void StartFollow(ADogPawn* NewPlayer);
-
-	UFUNCTION(BlueprintCallable, Category = "Follow")
-	void StopFollow();
-	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void UpdatePhysics(float DeltaTime);
-	void UpdateMovementX();
-	void CheckWallCollision(const FHitResult& Hit);
+	void StartFollow(ADogPawn* NewPlayer);
+	void StopFollow();
+
 	bool GetIsBoxBlocked() { return IsBoxBlocked; }
 
 	float GetBoxEdgeY() const;
 	float GetBoxLeftEdgeX() const;
 	float GetBoxRightEdgeX() const;
 	float GetBoxEdgeZ() const;
+
+protected:
+
+	virtual void BeginPlay() override;
+
+	bool IsOnGround();
+	void UpdatePhysics(float DeltaTime);
+	void UpdateMovementX();
+	void CheckWallCollision(const FHitResult& Hit);
+
+	UPROPERTY()
+	ADogPawn* Player;
+
+	UPROPERTY()
+	UPrimitiveComponent* BoxComponent;
+
+	bool bIsFollowing;
+	bool IsBoxBlocked;
+
+	float BoxVelocityX;
+	float BoxVelocityZ;
+	float GravityScale;
 };

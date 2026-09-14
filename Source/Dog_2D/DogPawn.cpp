@@ -38,8 +38,6 @@ ADogPawn::ADogPawn()
 	CollisionHead = nullptr;
 	OriginalExtentBodyZ = 0.f;
 	OriginalExtentHeadZ = 0.f;
-	CrouchedScaleBodyZ = 0.6f;
-	CrouchedScaleHeadZ = 0.8f;
 }
 
 void ADogPawn::UpdatePhysics(float DeltaTime)
@@ -540,15 +538,12 @@ void ADogPawn::TakeItemPressed()
 	{
 		if (WantToTakeItem())
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Can take item")));
-
 			OnPickupVisual();
 		}
 	}
 	else
 	{
 		OnDropVisual();
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Deleted item")));
 	}	
 }
 bool ADogPawn::WantToTakeItem()
@@ -565,7 +560,6 @@ void ADogPawn::ClearItemBone()
 {
 	Bone = nullptr;
 	bIsTakingItem = false;
-	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Item Bone Cleared")));
 }
 void ADogPawn::AttachItemToMouth()
 {
@@ -729,41 +723,6 @@ void ADogPawn::Depenetration()
 		AddActorWorldOffset(DepenetrationVector, false);
 	}
 }
-void ADogPawn::DepenetrationZ()
-{
-	if (IsGrounded && FMath::IsNearlyZero(VelocityZ, 0.1f)) return;
-
-	if (!CollisionBody) return;
-
-	FVector BodyLoc = CollisionBody->GetComponentLocation();
-	FVector BodyExtent = CollisionBody->GetScaledBoxExtent();
-	FQuat Rotation = CollisionBody->GetComponentQuat();
-	FHitResult HitResult;
-
-	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
-	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-
-	bool bOverlap = GetWorld()->SweepSingleByObjectType(
-		HitResult,
-		BodyLoc,
-		BodyLoc,
-		Rotation,
-		ObjectParams,
-		FCollisionShape::MakeBox(BodyExtent),
-		FCollisionQueryParams::DefaultQueryParam
-	);
-
-	if (bOverlap && HitResult.bStartPenetrating)
-	{
-		FVector DepenetrationVector = HitResult.Normal * (HitResult.PenetrationDepth + 0.5f);
-
-		DepenetrationVector.X = 0.f;
-		DepenetrationVector.Y = 0.f;
-
-		AddActorWorldOffset(DepenetrationVector, false);
-	}
-}
 
 float ADogPawn::GetHeadEdgeX() const
 {
@@ -808,7 +767,6 @@ void ADogPawn::BeginPlay()
 	MouthComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("MouthAttachPoint")));
 	CollisionBody = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("BodyCollision")));
 	CollisionHead = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("HeadCollision")));
-	MeshHead = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("Head")));
 
 	OriginalExtentBodyZ = CollisionBody->GetUnscaledBoxExtent().Z;
 	OriginalExtentHeadZ = CollisionHead->GetUnscaledBoxExtent().Z;
@@ -860,15 +818,6 @@ void ADogPawn::Tick(float DeltaTime)
 	{
 		TryStandUp();
 	}
-
-	if (MeshHead)
-	{
-		FVector Loc = MeshHead->GetRelativeLocation();
-		FRotator Rot = MeshHead->GetRelativeRotation();
-
-		GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::Green, FString::Printf(TEXT("MeshHead - Location: %s, Rotation: %s"), *Loc.ToString(), *Rot.ToString()));
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("BONE %s"), Bone ? *Bone->GetName() : *FString("None")));
 	
 }
 

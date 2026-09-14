@@ -19,34 +19,25 @@ public:
 	// Sets default values for this actor's properties
 	AItemBone();
 
-protected:
-	// Called when the game starts or when spawned
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Taken")
-	UPrimitiveComponent* BoneComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Taken")
-	ADogPawn* Player;
-
-	float VelocityZ;
-	float VelocityX;
-	float Gravity;
-
-	bool IsTaking;
-	bool IsFalling;
-
-	bool IsOnGround();
-
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 	bool TryTake(ADogPawn* NewPlayer);
-
 	void DisablePhysics();
 	void EnablePhysics();
 
-	void UpdatePhysics(float DeltaTime);
-	virtual void Tick(float DeltaTime) override;
+protected:
 
+	virtual void BeginPlay() override;
+
+	bool IsOnGround();
+	void UpdatePhysics(float DeltaTime);
+
+	UPROPERTY()
+	UPrimitiveComponent* BoneComponent;
+
+	UPROPERTY()
+	ADogPawn* Player;
+
+	float VelocityZ;
+	float Gravity;
 };

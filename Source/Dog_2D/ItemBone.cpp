@@ -14,14 +14,10 @@ AItemBone::AItemBone()
 	PrimaryActorTick.bCanEverTick = true;
 
 	VelocityZ = 0.0f;
-	VelocityX = 0.f;
 	Gravity = -980.0f;
 
 	Player = nullptr;
 	BoneComponent = nullptr;
-
-	IsTaking = false;
-	IsFalling = false;
 }
 
 bool AItemBone::IsOnGround()
@@ -132,7 +128,6 @@ void AItemBone::BeginPlay()
 	Super::BeginPlay();
 	
 	BoneComponent = Cast<UPrimitiveComponent>(GetRootComponent());
-
 }
 
 // Called every frame
@@ -143,26 +138,8 @@ void AItemBone::Tick(float DeltaTime)
 	UpdatePhysics(DeltaTime);
 
 	float DeltaZ = VelocityZ * DeltaTime;
-
-	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("VelocityZ: %f, CurrentZ: %f"), VelocityZ, GetActorLocation().Z));
 	
 	FVector DeltaLocation = FVector(0.0f, 0.0f, DeltaZ);
 	AddActorWorldOffset(DeltaLocation, true);
-
-	TArray<UPrimitiveComponent*> Prims;
-	GetComponents<UPrimitiveComponent>(Prims);
-
-	for (UPrimitiveComponent* Prim : Prims)
-	{
-		ECollisionEnabled::Type CollisionType = Prim->GetCollisionEnabled();
-		ECollisionChannel CollisionChannel = Prim->GetCollisionObjectType();
-		ECollisionResponse CollisionResponse = Prim->GetCollisionResponseToChannel(ECC_GameTraceChannel2);
-
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Component: %s, CollisionType: %d, CollisionChannel: %d, CollisionResponse: %s"),
-			*Prim->GetName(),
-			(int32)CollisionType,
-			(int32)CollisionChannel,
-			*UEnum::GetValueAsString(CollisionResponse)));
-	}
 }
 
