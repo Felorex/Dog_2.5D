@@ -18,30 +18,17 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	float GetVelocityX() const { return VelocityX; }
-	float GetHeadEdgeX() const;
-	float GetHeadEdgeY() const;
-	float GetHeadEdgeZ() const;
-	float GetBottomZ() const;
-	float GetContainerForward() const { return Conteiner ? Conteiner->GetForwardVector().X : 1.0f; }
-	bool GetIsPulling() const { return bIsPulling; }
-	bool GetIsPushing() const { return bIsPushing; }
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	void UpdatePhysics(float DeltaTime);
-	bool getIsGrounded() const { return IsGrounded; }
-	void CheckGrounded();
-	void Depenetration();
-
-	bool CanMoveWithHead(float DeltaX);
-
+	UPROPERTY()
 	USceneComponent* Conteiner;
+	UPROPERTY()
 	USceneComponent* MouthComp;
-	USceneComponent* CameraComp;
+	UPROPERTY()
 	UBoxComponent* CollisionBody;
+	UPROPERTY()
 	UBoxComponent* CollisionHead;
 
 	float OriginalExtentBodyZ;
@@ -53,20 +40,13 @@ protected:
 
 	float Gravity;
 	bool IsGrounded;
-	float OriginalY;
-	float TargetY;
 
 	bool bWantToCrouch;
 	float CrouchSpeed;
 	bool IsCrouching;
 
-	float InteractDistance;
 	float VelocityZ;
 	float VelocityX;
 	float MoveSpeed;
 
-	bool bIsPushing;
-	bool bIsPulling;
-
-	bool bIsTakingItem;
 };

@@ -91,9 +91,9 @@ public:
 	float GetHeadEdgeY() const;
 	float GetHeadEdgeZ() const;
 	float GetBottomZ() const;
-	float GetContainerForward() const { return Conteiner ? Conteiner->GetForwardVector().X : 1.0f; }
 	bool GetIsPulling() const { return bIsPulling; }
 	bool GetIsPushing() const { return bIsPushing; }
+	float GetContainerForward() const;
 
 	void ForceStopMovement();
 	void ClearInteractiveBox();
@@ -125,32 +125,12 @@ protected:
 	AInteractiveBox* Box;
 	AItemBone* Bone;
 
-	USceneComponent* Conteiner;
-	USceneComponent* MouthComp;
 	USceneComponent* CameraComp;
-	UBoxComponent* CollisionBody;
-	UBoxComponent* CollisionHead;
 
-	float OriginalExtentBodyZ;
-	float OriginalExtentHeadZ;
-
-	bool bWantToJump;
-	bool IsJumping;
-	float JumpForce;
-
-	float Gravity;
-	bool IsGrounded;
 	float OriginalY;
 	float TargetY;
-
-	bool bWantToCrouch;
-	float CrouchSpeed;
-	bool IsCrouching;	
 	
 	float InteractDistance;
-	float VelocityZ;
-	float VelocityX;
-	float MoveSpeed;
 	
 	bool bIsPushing;
 	bool bIsPulling;

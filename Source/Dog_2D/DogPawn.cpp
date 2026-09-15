@@ -10,34 +10,17 @@ ADogPawn::ADogPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	bWantToCrouch = false;
-	IsCrouching = false;
-
-	bWantToJump = false;
-	IsJumping = false;
-
 	bIsInteracting = false;
 	bIsPushing = false;
 	bIsPulling = false;
 
 	bIsTakingItem = false;
 
-	IsGrounded = false;	
-	
 	InteractDistance = 100.f;
-	Gravity = -980.0f; 
-	VelocityZ = 0.0f;
-	VelocityX = 0.0f;
-	MoveSpeed = 300.f;
-	CrouchSpeed = 150.f;
-	JumpForce = 600.0f;
 
 	Bone = nullptr;
 	Box = nullptr;
-	CollisionBody = nullptr;
-	CollisionHead = nullptr;
-	OriginalExtentBodyZ = 0.f;
-	OriginalExtentHeadZ = 0.f;
+
 }
 
 void ADogPawn::UpdatePhysics(float DeltaTime)
@@ -755,6 +738,11 @@ float ADogPawn::GetBottomZ() const
 
 	return GetActorLocation().Z - CollisionBody->GetScaledBoxExtent().Z;
 }
+float ADogPawn::GetContainerForward_Implementation() const
+{
+	if (!Conteiner) return 1.f;
+	return FMath::Sign(Conteiner->GetForwardVector().X);
+}
 
 
 // Called when the game starts or when spawned
@@ -762,24 +750,12 @@ void ADogPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
 	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
-	MouthComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("MouthAttachPoint")));
-	CollisionBody = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("BodyCollision")));
-	CollisionHead = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("HeadCollision")));
-
-	OriginalExtentBodyZ = CollisionBody->GetUnscaledBoxExtent().Z;
-	OriginalExtentHeadZ = CollisionHead->GetUnscaledBoxExtent().Z;
+	Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
 
 	OriginalY = GetActorLocation().Y;
 	TargetY = OriginalY;
 
-	if (CollisionBody && CollisionHead)
-	{
-		CollisionBody->IgnoreComponentWhenMoving(CollisionHead, true);
-		CollisionHead->IgnoreComponentWhenMoving(CollisionBody, true);
-	}
-	
 
 	GetWorldTimerManager().SetTimer(
 		InteractTimer,
