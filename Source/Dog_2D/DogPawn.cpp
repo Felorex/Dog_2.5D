@@ -3,6 +3,7 @@
 
 #include "DogPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "InteractiveBox.h"
 
 // Sets default values
 ADogPawn::ADogPawn()
@@ -19,25 +20,8 @@ ADogPawn::ADogPawn()
 	InteractDistance = 100.f;
 
 	Bone = nullptr;
-	Box = nullptr;
-
 }
 
-void ADogPawn::UpdatePhysics(float DeltaTime)
-{
-
-	if (!IsGrounded)
-	{
-		VelocityZ += Gravity * DeltaTime;
-	}
-	else
-	{
-		VelocityZ = 0.0f;
-	}
-
-	FVector DeltaLocation(0.0f, 0.0f, VelocityZ * DeltaTime);
-	AddActorWorldOffset(DeltaLocation, true);
-}
 void ADogPawn::Move(float Value)
 {
 	float CurrentMoveSpeed = IsCrouching ? CrouchSpeed : MoveSpeed;
@@ -63,6 +47,22 @@ void ADogPawn::Move(float Value)
 		DeltaX = 0.f;
 		ForceStopMovement();
 	}
+
+	if (!bIsInteracting && !FMath::IsNearlyZero(Value, 0.1f))
+	{
+		if (Value < 0.f)
+		{
+			OnLookLeftVisual();
+		}
+		else if (Value > 0.f)
+		{
+			OnLookRightVisual();
+		}
+	}
+	else
+	{
+		SetMoveDirection(Value);
+	}	
 }
 void ADogPawn::StopMove()
 {
@@ -158,134 +158,82 @@ void ADogPawn::SetMoveDirection(float Value)
 		InteractMovementX();
 	}
 }
-void ADogPawn::CheckGrounded()
-{
-	if (!CollisionBody) return;
 
-	FVector Start = CollisionBody->GetComponentLocation();
-	FVector BodyExtent = CollisionBody->GetScaledBoxExtent();
-	FRotator Rotation = CollisionBody->GetComponentRotation();
 
-	FVector End = Start;
-	End.Z -= 5.0f; // Check slightly below the body
+//void ADogPawn::DoJump()
+//{
+//	if (IsJumping || bIsInteracting || IsCrouching) return;
+//
+//	if (Box)
+//	{
+//		ClearInteractiveBox();
+//	}
+//	if (IsGrounded)
+//	{
+//		VelocityZ = JumpForce;
+//		IsGrounded = false;
+//		IsJumping = true;
+//		bWantToJump = true;
+//
+//		GetWorldTimerManager().SetTimer(
+//			CheckBoxTimer,
+//			this,
+//			&ADogPawn::CheckBoxUnderfoot,
+//			0.03f,
+//			true
+//		);
+//	}
+//}
+//void ADogPawn::StopJump()
+//{
+//	bWantToJump = false;
+//}
 
-	FVector TraceExtent = FVector(15.f, BodyExtent.Y, BodyExtent.Z);
-
-	FHitResult HitResult;
-
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
-
-	bool bHit = UKismetSystemLibrary::BoxTraceSingleForObjects(
-		this,
-		Start,
-		End,
-		TraceExtent,
-		Rotation,
-		ObjectTypes,
-		false,
-		TArray<AActor*>({ this }),
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
-		HitResult,
-		true
-	);
-	if(IsJumping && VelocityZ > 0.0f)
-	{
-		IsGrounded = false;
-		return;
-	}
-	if (bHit && HitResult.IsValidBlockingHit())
-	{
-		IsGrounded = true;
-
-		AActor* HitActor = HitResult.GetActor();
-		if (HitActor && HitActor->IsA(AInteractiveBox::StaticClass()))
-		{
-			Box = Cast<AInteractiveBox>(HitActor);
-		}
-	}
-	else
-	{
-		IsGrounded = false;
-	}
-}
-
-void ADogPawn::DoJump()
-{
-	if (IsJumping || bIsInteracting || IsCrouching) return;
-
-	if (Box)
-	{
-		ClearInteractiveBox();
-	}
-	if (IsGrounded)
-	{
-		VelocityZ = JumpForce;
-		IsGrounded = false;
-		IsJumping = true;
-		bWantToJump = true;
-
-		GetWorldTimerManager().SetTimer(
-			CheckBoxTimer,
-			this,
-			&ADogPawn::CheckBoxUnderfoot,
-			0.03f,
-			true
-		);
-	}
-}
-void ADogPawn::StopJump()
-{
-	bWantToJump = false;
-}
-
-void ADogPawn::CheckBoxUnderfoot()
-{
-	if (!IsJumping) return;
-
-	FVector Start = GetActorLocation();
-
-	FVector End = Start - FVector(0.0f, 0.0f, 120.f);
-	FVector BoxHalfExtent = FVector(30.0f, 100.0f, 10.f);
-
-	FHitResult Result;
-
-	TArray<AActor*> ActorToIgnore = { this };
-
-	bool bHit = UKismetSystemLibrary::BoxTraceSingle(
-		this,
-		Start,
-		End,
-		BoxHalfExtent,
-		GetActorRotation(),
-		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
-		false,
-		ActorToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
-		Result,
-		true
-	);
-
-	if (bHit && Result.GetActor())
-	{
-		AInteractiveBox* FoundBox = Cast<AInteractiveBox>(Result.GetActor());
-		if (FoundBox)
-		{
-			float BoxLeft = FoundBox->GetBoxLeftEdgeX();
-			float BoxRight = FoundBox->GetBoxRightEdgeX();
-
-			float DogX = GetActorLocation().X;
-
-			if (Result.ImpactNormal.Z > 0.7f && DogX > BoxLeft && DogX < BoxRight)
-			{
-				Box = FoundBox;
-			}
-		}
-	}	
-}
+//void ADogPawn::CheckBoxUnderfoot()
+//{
+//	if (!IsJumping) return;
+//
+//	FVector Start = GetActorLocation();
+//
+//	FVector End = Start - FVector(0.0f, 0.0f, 120.f);
+//	FVector BoxHalfExtent = FVector(30.0f, 100.0f, 10.f);
+//
+//	FHitResult Result;
+//
+//	TArray<AActor*> ActorToIgnore = { this };
+//
+//	bool bHit = UKismetSystemLibrary::BoxTraceSingle(
+//		this,
+//		Start,
+//		End,
+//		BoxHalfExtent,
+//		GetActorRotation(),
+//		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
+//		false,
+//		ActorToIgnore,
+//		EDrawDebugTrace::None,
+//		//EDrawDebugTrace::ForDuration,
+//		Result,
+//		true
+//	);
+//
+//	if (bHit && Result.GetActor())
+//	{
+//		AInteractiveBox* FoundBox = Cast<AInteractiveBox>(Result.GetActor());
+//		if (FoundBox)
+//		{
+//			float BoxLeft = FoundBox->GetBoxLeftEdgeX();
+//			float BoxRight = FoundBox->GetBoxRightEdgeX();
+//
+//			float DogX = GetActorLocation().X;
+//
+//			if (Result.ImpactNormal.Z > 0.7f && DogX > BoxLeft && DogX < BoxRight)
+//			{
+//				Box = FoundBox;
+//			}
+//		}
+//	}	
+//}
 void ADogPawn::UpdatePositionY(float DeltaTime)
 {
 	if (!CollisionHead || !CollisionBody) return;
@@ -302,8 +250,7 @@ void ADogPawn::UpdatePositionY(float DeltaTime)
 		else
 		{
 			TargetY = OriginalY;
-		}
-		
+		}		
 	}
 	else if (bIsInteracting && Box)
 	{
@@ -323,27 +270,27 @@ void ADogPawn::UpdatePositionY(float DeltaTime)
 
 	AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
 }
-void ADogPawn::CheckJumpExecution()
-{
-	if (!IsJumping) return;
-
-	float CurrentY = GetActorLocation().Y;
-
-	if (IsGrounded)
-	{
-		if (GetWorldTimerManager().IsTimerActive(CheckBoxTimer))
-		{
-			GetWorldTimerManager().ClearTimer(CheckBoxTimer);
-		}
-		
-		if(!Box)
-		{
-			Box = nullptr;
-		}
-
-		IsJumping = false;
-	}
-}
+//void ADogPawn::CheckJumpExecution()
+//{
+//	if (!IsJumping) return;
+//
+//	float CurrentY = GetActorLocation().Y;
+//
+//	if (IsGrounded)
+//	{
+//		if (GetWorldTimerManager().IsTimerActive(CheckBoxTimer))
+//		{
+//			GetWorldTimerManager().ClearTimer(CheckBoxTimer);
+//		}
+//		
+//		if(!Box)
+//		{
+//			Box = nullptr;
+//		}
+//
+//		IsJumping = false;
+//	}
+//}
 
 void ADogPawn::CanInteractWithObjects()
 {
@@ -393,8 +340,8 @@ void ADogPawn::CanInteractWithObjects()
 		InteractTraceChannel,
 		false,
 		ActorsToIgnore,
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
 		Result,
 		true
 	);
@@ -507,10 +454,6 @@ void ADogPawn::ForceStopMovement()
 {
 	VelocityX = 0.0f;
 	SetMoveDirection(0.0f);
-}
-void ADogPawn::ClearInteractiveBox()
-{
-	Box = nullptr;
 }
 
 void ADogPawn::TakeItemPressed()
@@ -677,36 +620,6 @@ bool ADogPawn::CanStandUp()
 	return true;
 }
 
-void ADogPawn::Depenetration()
-{
-	if (!CollisionHead) return;
-
-	FVector HeadLoc = CollisionHead->GetComponentLocation();
-	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
-	FQuat Rotation = CollisionHead->GetComponentQuat();
-	FHitResult HitResult;
-
-	bool bOverlap = GetWorld()->SweepSingleByChannel(
-		HitResult,
-		HeadLoc,
-		HeadLoc,
-		Rotation,
-		ECC_WorldStatic,
-		FCollisionShape::MakeBox(HeadExtent),
-		FCollisionQueryParams::DefaultQueryParam
-	);
-
-	if (bOverlap && HitResult.bStartPenetrating)
-	{
-		FVector DepenetrationVector = HitResult.Normal * (HitResult.PenetrationDepth + 1.0f);
-
-		DepenetrationVector.Z = 0.0f;
-		DepenetrationVector.Y = 0.0f;
-
-		AddActorWorldOffset(DepenetrationVector, false);
-	}
-}
-
 float ADogPawn::GetHeadEdgeX() const
 {
 	if (!Conteiner || !CollisionHead) return GetActorLocation().X;
@@ -732,13 +645,13 @@ float ADogPawn::GetHeadEdgeZ() const
 
 	return HeadCenterZ + HeadExtentZ;
 }
-float ADogPawn::GetBottomZ() const
-{
-	if (!CollisionBody) return GetActorLocation().Z;
-
-	return GetActorLocation().Z - CollisionBody->GetScaledBoxExtent().Z;
-}
-float ADogPawn::GetContainerForward_Implementation() const
+//float ADogPawn::GetBottomZ() const
+//{
+//	if (!CollisionBody) return GetActorLocation().Z;
+//
+//	return GetActorLocation().Z - CollisionBody->GetScaledBoxExtent().Z;
+//}
+float ADogPawn::GetContainerForward() const
 {
 	if (!Conteiner) return 1.f;
 	return FMath::Sign(Conteiner->GetForwardVector().X);
@@ -751,10 +664,7 @@ void ADogPawn::BeginPlay()
 	Super::BeginPlay();
 
 	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
-	Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
-
-	OriginalY = GetActorLocation().Y;
-	TargetY = OriginalY;
+	//Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
 
 
 	GetWorldTimerManager().SetTimer(
@@ -771,12 +681,6 @@ void ADogPawn::BeginPlay()
 void ADogPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	CheckGrounded();
-	UpdatePhysics(DeltaTime);
-	UpdatePositionY(DeltaTime);
-
-	Depenetration();
 
 	if (CameraComp)
 	{

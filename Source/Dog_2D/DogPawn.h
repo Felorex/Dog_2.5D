@@ -7,7 +7,6 @@
 #include "Components/BoxComponent.h"
 
 #include "BaseDogPawn.h"
-#include "InteractiveBox.h"
 #include "ItemBone.h"
 
 #include "DogPawn.generated.h"
@@ -35,11 +34,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void StopMove();
 
-	UFUNCTION(BlueprintCallable, Category = "Jump")
-	void DoJump();
+	//UFUNCTION(BlueprintCallable, Category = "Jump")
+	//void DoJump();
 
-	UFUNCTION(BlueprintCallable, Category = "Jump")
-	void StopJump();
+	//UFUNCTION(BlueprintCallable, Category = "Jump")
+	//void StopJump();
 
 	UFUNCTION(BlueprintCallable, Category = "Crouch")
 	void OnCrouchPressed();
@@ -61,6 +60,12 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Stand")
 	void OnStandVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
+	void OnLookRightVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
+	void OnLookLeftVisual();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
 	void OnPushVisual();
@@ -90,30 +95,24 @@ public:
 	float GetHeadEdgeX() const;
 	float GetHeadEdgeY() const;
 	float GetHeadEdgeZ() const;
-	float GetBottomZ() const;
 	bool GetIsPulling() const { return bIsPulling; }
 	bool GetIsPushing() const { return bIsPushing; }
 	float GetContainerForward() const;
 
 	void ForceStopMovement();
-	void ClearInteractiveBox();
 	void ClearItemBone();
 
 protected:
 
 	virtual void BeginPlay() override;
-
-	void UpdatePhysics(float DeltaTime);
-	bool getIsGrounded() const { return IsGrounded; }
-	void CheckGrounded();
-	void Depenetration();
+	virtual void UpdatePositionY(float DeltaTime) override;
 
 	bool CanMoveWithHead(float DeltaX);
-	void UpdatePositionY(float DeltaTime);
+	
 	void InteractMovementX();
 	void CanInteractWithObjects();
-	void CheckBoxUnderfoot();
-	void CheckJumpExecution();
+	/*void CheckBoxUnderfoot();
+	void CheckJumpExecution();*/
 
 	bool CanStandUp();
 	void TryStandUp();
@@ -122,13 +121,12 @@ protected:
 	bool PreCheckAlignmentSpace();
 	bool WantToTakeItem();
 
-	AInteractiveBox* Box;
 	AItemBone* Bone;
 
 	USceneComponent* CameraComp;
 
-	float OriginalY;
-	float TargetY;
+	//float OriginalY;
+	//float TargetY;
 	
 	float InteractDistance;
 	
@@ -138,5 +136,5 @@ protected:
 	bool bIsTakingItem;
 
 	FTimerHandle InteractTimer;
-	FTimerHandle CheckBoxTimer;
+	/*FTimerHandle CheckBoxTimer;*/
 };
