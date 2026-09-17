@@ -7,7 +7,7 @@
 #include "ItemBone.generated.h"
 
 
-class ADogPawn;
+class ABaseDogPawn;
 
 
 UCLASS()
@@ -21,7 +21,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	bool TryTake(ADogPawn* NewPlayer);
+	bool TryTake(ABaseDogPawn* NewBase);
 	void DisablePhysics();
 	void EnablePhysics();
 
@@ -36,7 +36,7 @@ protected:
 	UPrimitiveComponent* BoneComponent;
 
 	UPROPERTY()
-	ADogPawn* Player;
+	ABaseDogPawn* Base;
 
 	float VelocityZ;
 	float Gravity;

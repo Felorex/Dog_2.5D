@@ -2,7 +2,7 @@
 
 
 #include "ItemBone.h"
-#include "DogPawn.h"
+#include "BaseDogPawn.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -16,7 +16,7 @@ AItemBone::AItemBone()
 	VelocityZ = 0.0f;
 	Gravity = -980.0f;
 
-	Player = nullptr;
+	Base = nullptr;
 	BoneComponent = nullptr;
 }
 
@@ -66,9 +66,9 @@ void AItemBone::UpdatePhysics(float DeltaTime)
 	}	
 }
 
-bool AItemBone::TryTake(ADogPawn* NewPlayer)
+bool AItemBone::TryTake(ABaseDogPawn* NewBase)
 {
-	if (!BoneComponent|| !NewPlayer) return false;
+	if (!BoneComponent|| !NewBase) return false;
 
 	FVector Start = BoneComponent->GetComponentLocation() + FVector(0.0f, 0.0f, 20.f);
 	FVector End = Start + FVector(0.0f, 0.0f, 60.f);
@@ -77,7 +77,7 @@ bool AItemBone::TryTake(ADogPawn* NewPlayer)
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
-	ActorsToIgnore.Add(NewPlayer);
+	ActorsToIgnore.Add(NewBase);
 	
 
 	bool bHit = UKismetSystemLibrary::LineTraceSingle(
@@ -97,7 +97,7 @@ bool AItemBone::TryTake(ADogPawn* NewPlayer)
 
 	if (bHit && HitResult.IsValidBlockingHit())
 	{
-		NewPlayer->ClearItemBone();
+		NewBase->ClearItemBone();
 		
 		return false;
 	}

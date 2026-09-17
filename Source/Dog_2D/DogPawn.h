@@ -25,47 +25,23 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void Move(float Value) override;
+	virtual void StopMove() override;
+
+	virtual void DoJump() override;
+
+	virtual void OnCrouchPressed() override;
+
+	virtual void ForceStopMovement() override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_Movement")
 	bool bIsInteracting;
-
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	void Move(float Value);
-
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	void StopMove();
-
-	//UFUNCTION(BlueprintCallable, Category = "Jump")
-	//void DoJump();
-
-	//UFUNCTION(BlueprintCallable, Category = "Jump")
-	//void StopJump();
-
-	UFUNCTION(BlueprintCallable, Category = "Crouch")
-	void OnCrouchPressed();
-
-	UFUNCTION(BlueprintCallable, Category = "Stand")
-	void OnCrouchReleased();
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	void InteractPressed();
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	void InteractReleased();
-
-	UFUNCTION(BlueprintCallable, Category = "TakeItem")
-	void TakeItemPressed();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Crouch")
-	void OnCrouchVisual();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Stand")
-	void OnStandVisual();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
-	void OnLookRightVisual();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
-	void OnLookLeftVisual();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
 	void OnPushVisual();
@@ -79,18 +55,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
 	void SetMoveDirection(float Value);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
-	void OnPickupVisual();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
-	void OnDropVisual();
-
-	UFUNCTION(BlueprintCallable, Category = "TakeItem")
-	void AttachItemToMouth();
-
-	UFUNCTION(BlueprintCallable, Category = "TakeItem")
-	void DetachItemFromMouth();
-
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
 	float GetHeadEdgeY() const;
@@ -99,42 +63,20 @@ public:
 	bool GetIsPushing() const { return bIsPushing; }
 	float GetContainerForward() const;
 
-	void ForceStopMovement();
-	void ClearItemBone();
-
 protected:
 
 	virtual void BeginPlay() override;
 	virtual void UpdatePositionY(float DeltaTime) override;
-
-	bool CanMoveWithHead(float DeltaX);
+	virtual bool CanMoveWithHead(float DeltaX) override;
 	
+	virtual void CanInteractWithObjects() override;
+
 	void InteractMovementX();
-	void CanInteractWithObjects();
-	/*void CheckBoxUnderfoot();
-	void CheckJumpExecution();*/
-
-	bool CanStandUp();
-	void TryStandUp();
-
 	float CalculateAlignmentDeltaX() const;
 	bool PreCheckAlignmentSpace();
-	bool WantToTakeItem();
-
-	AItemBone* Bone;
 
 	USceneComponent* CameraComp;
-
-	//float OriginalY;
-	//float TargetY;
-	
-	float InteractDistance;
-	
+		
 	bool bIsPushing;
 	bool bIsPulling;
-
-	bool bIsTakingItem;
-
-	FTimerHandle InteractTimer;
-	/*FTimerHandle CheckBoxTimer;*/
 };

@@ -8,6 +8,7 @@
 #include "BaseDogPawn.generated.h"
 
 class AInteractiveBox;
+class AItemBone;
 
 
 UCLASS()
@@ -21,13 +22,55 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	virtual void Move(float Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	virtual void StopMove();
+
 	UFUNCTION(BlueprintCallable, Category = "Jump")
-	void DoJump();
+	virtual void DoJump();
 
 	UFUNCTION(BlueprintCallable, Category = "Jump")
 	void StopJump();
 
+	UFUNCTION(BlueprintCallable, Category = "Crouch")
+	virtual void OnCrouchPressed();
+
+	UFUNCTION(BlueprintCallable, Category = "Stand")
+	void OnCrouchReleased();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void TakeItemPressed();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void AttachItemToMouth();
+
+	UFUNCTION(BlueprintCallable, Category = "TakeItem")
+	void DetachItemFromMouth();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
+	void OnLookRightVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "StandVisual")
+	void OnLookLeftVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Crouch")
+	void OnCrouchVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Stand")
+	void OnStandVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
+	void OnPickupVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
+	void OnDropVisual();
+
+	virtual void ForceStopMovement();
+
 	void ClearInteractiveBox();
+	void ClearItemBone();
 
 	float GetBottomZ() const;
 
@@ -36,14 +79,23 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void UpdatePositionY(float DeltaTime);
 
+	virtual bool CanMoveWithHead(float DeltaX);
+
+	virtual void CanInteractWithObjects();
+	FHitResult InteractHitResult;
+
 	void UpdatePhysics(float DeltaTime);
 	bool getIsGrounded() const { return IsGrounded; }
 	void CheckGrounded();
 	void Depenetration();
-
+	
 	void CheckBoxUnderfoot();
 	void CheckJumpExecution();
 	
+	void TryStandUp();
+	bool CanStandUp();
+
+	bool WantToTakeItem();
 
 	UPROPERTY()
 	USceneComponent* Conteiner;
@@ -56,6 +108,8 @@ protected:
 
 	UPROPERTY()
 	AInteractiveBox* Box;
+	UPROPERTY()
+	AItemBone* Bone;
 
 	float OriginalExtentBodyZ;
 	float OriginalExtentHeadZ;
@@ -78,5 +132,11 @@ protected:
 	float VelocityX;
 	float MoveSpeed;
 
+	bool bIsTakingItem;
+
+	float InteractDistance;
+
+
 	FTimerHandle CheckBoxTimer;
+	FTimerHandle InteractTimer;
 };

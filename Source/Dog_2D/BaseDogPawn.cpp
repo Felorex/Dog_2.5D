@@ -4,6 +4,7 @@
 #include "BaseDogPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "InteractiveBox.h"
+#include "ItemBone.h"
 
 // Sets default values
 ABaseDogPawn::ABaseDogPawn()
@@ -24,7 +25,12 @@ ABaseDogPawn::ABaseDogPawn()
 	bWantToCrouch = false;
 	bWantToJump = false;
 
+	bIsTakingItem = false;
+
+	InteractDistance = 100.f;
+
 	Box = nullptr;
+	Bone = nullptr;
 
 	CollisionBody = nullptr;
 	CollisionHead = nullptr;
@@ -32,9 +38,79 @@ ABaseDogPawn::ABaseDogPawn()
 	MouthComp = nullptr;
 }
 
+void ABaseDogPawn::Move(float Value)
+{
+	float CurrentMoveSpeed = IsCrouching ? CrouchSpeed : MoveSpeed;
+	VelocityX = Value * CurrentMoveSpeed;
+
+	float DeltaX = VelocityX * GetWorld()->GetDeltaSeconds();
+
+	if (!CanMoveWithHead(DeltaX))
+	{
+		ForceStopMovement();
+		DeltaX = 0.0f;
+		return;
+	}
+
+
+	FVector DeltaLocation(DeltaX, 0.0f, 0.0f);
+	FHitResult MoveResult;
+
+	AddActorWorldOffset(DeltaLocation, true, &MoveResult);
+
+	if (MoveResult.IsValidBlockingHit())
+	{
+		DeltaX = 0.f;
+		ForceStopMovement();
+	}
+}
+bool ABaseDogPawn::CanMoveWithHead(float DeltaX)
+{
+	FVector Start = CollisionHead->GetComponentLocation();
+	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
+	FRotator Rotation = CollisionHead->GetComponentRotation();
+
+	FVector End = Start;
+	End.X += DeltaX;
+
+	FHitResult HitResult;
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+
+	bool bHit = UKismetSystemLibrary::BoxTraceSingle(
+		this,
+		Start,
+		End,
+		HeadExtent,
+		Rotation,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
+		HitResult,
+		true
+	);
+
+	if (bHit && HitResult.IsValidBlockingHit())
+	{
+		return false;
+	}
+	return true;
+}
+void ABaseDogPawn::ForceStopMovement()
+{
+	VelocityX = 0.0f;
+}
+void ABaseDogPawn::StopMove()
+{
+	VelocityX = 0.0f;
+}
+
 void ABaseDogPawn::DoJump()
 {
-	if (IsJumping || /*bIsInteracting ||*/ IsCrouching) return;
+	if (IsJumping || IsCrouching) return;
 
 	if (Box)
 	{
@@ -75,6 +151,245 @@ void ABaseDogPawn::UpdatePhysics(float DeltaTime)
 	FVector DeltaLocation(0.0f, 0.0f, VelocityZ * DeltaTime);
 	AddActorWorldOffset(DeltaLocation, true);
 }
+
+void ABaseDogPawn::OnCrouchPressed()
+{
+	if (IsCrouching || IsJumping) return;
+
+	bWantToCrouch = true;
+
+	if (IsGrounded)
+	{
+		IsCrouching = true;
+
+		if (Box)
+		{
+			float BoxTop = Box->GetBoxEdgeZ();
+			float DogBottom = GetBottomZ();
+
+			if (DogBottom < BoxTop - 5.f)
+			{
+				ClearInteractiveBox();
+			}
+		}
+		OnCrouchVisual();
+	}
+}
+void ABaseDogPawn::OnCrouchReleased()
+{
+	bWantToCrouch = false;
+
+	if (IsCrouching)
+	{
+		TryStandUp();
+	}
+}
+void ABaseDogPawn::TryStandUp()
+{
+	if (CanStandUp())
+	{
+		IsCrouching = false;
+
+		OnStandVisual();
+	}
+}
+bool ABaseDogPawn::CanStandUp()
+{
+	if (!IsCrouching) return true;
+
+	FVector HeadLocation = CollisionHead->GetComponentLocation();
+	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
+	FRotator Rotation = FRotator::ZeroRotator;
+	HeadLocation.Z += (OriginalExtentHeadZ - HeadExtent.Z);
+
+	FVector FullHeadExtent = CollisionHead->GetUnscaledBoxExtent();
+	FullHeadExtent.Z = OriginalExtentHeadZ;
+
+	FHitResult HitHeadResult;
+
+	bool bHitHead = UKismetSystemLibrary::BoxTraceSingle(
+		this,
+		HeadLocation,
+		HeadLocation,
+		FullHeadExtent,
+		Rotation,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
+		false,
+		TArray<AActor*>({ this }),
+		EDrawDebugTrace::ForDuration,
+		HitHeadResult,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		5.0f
+	);
+
+	FVector BodyLocation = CollisionBody->GetComponentLocation();
+	FVector BodyExtent = CollisionBody->GetScaledBoxExtent();
+	FRotator BodyRotation = CollisionBody->GetComponentRotation();
+	BodyLocation.Z += (OriginalExtentBodyZ - BodyExtent.Z);
+
+	FVector FullBodyExtent = CollisionBody->GetUnscaledBoxExtent();
+	FullBodyExtent.Z = OriginalExtentBodyZ;
+
+	FHitResult HitBodyResult;
+
+	bool bHitBody = UKismetSystemLibrary::BoxTraceSingle(
+		this,
+		BodyLocation,
+		BodyLocation,
+		FullBodyExtent,
+		BodyRotation,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
+		false,
+		TArray<AActor*>({ this }),
+		//EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
+		HitBodyResult,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		5.0f
+	);
+
+	if (bHitBody || bHitHead)
+	{
+		return false;
+	}
+	return true;
+}
+
+void ABaseDogPawn::CanInteractWithObjects()
+{
+	if (IsCrouching || IsJumping || bIsTakingItem) return;
+
+	FVector LookDirection = GetActorForwardVector();
+	FRotator TraceRotation = GetActorRotation();
+
+
+	if (Conteiner)
+	{
+		LookDirection = Conteiner->GetForwardVector();
+		TraceRotation = Conteiner->GetComponentRotation();
+	}
+
+	FVector StartLocation = GetActorLocation();
+
+	if (CollisionBody)
+	{
+		float BodyCenter = CollisionBody->GetComponentLocation().X;
+		float BodyHalf = CollisionBody->GetScaledBoxExtent().X;
+		float DogDirecion = FMath::Sign(LookDirection.X);
+
+		StartLocation.X = BodyCenter + (BodyHalf * DogDirecion);
+
+	}
+
+	FVector EndLocation = StartLocation + (LookDirection * InteractDistance);
+
+	StartLocation.Z += 5.f;
+	EndLocation.Z += 2.f;
+
+	FVector BoxHalfExtent = FVector(30.0f, 120.0f, 65.f);
+
+	ETraceTypeQuery InteractTraceChannel = UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel2);
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+
+	InteractHitResult = FHitResult();
+
+	bool bHitSomthing = UKismetSystemLibrary::BoxTraceSingle(
+		this,
+		StartLocation,
+		EndLocation,
+		BoxHalfExtent,
+		TraceRotation,
+		InteractTraceChannel,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
+		InteractHitResult,
+		true
+	);
+
+	if (bHitSomthing && InteractHitResult.GetActor())
+	{
+		AItemBone* FoundBone = Cast<AItemBone>(InteractHitResult.GetActor());
+
+		if (FoundBone)
+		{
+			Bone = FoundBone;
+			return;
+		}
+	}
+	else
+	{
+		if (!bIsTakingItem)
+		{
+			Bone = nullptr;
+		}
+	}
+}
+
+void ABaseDogPawn::TakeItemPressed()
+{
+	if (!Bone) return;
+
+	if (!bIsTakingItem)
+	{
+		if (WantToTakeItem())
+		{
+			OnPickupVisual();
+		}
+	}
+	else
+	{
+		OnDropVisual();
+	}
+}
+bool ABaseDogPawn::WantToTakeItem()
+{
+	if (!Bone) return false;
+
+	if (Bone->TryTake(this))
+	{
+		return true;
+	}
+	return false;
+}
+void ABaseDogPawn::AttachItemToMouth()
+{
+	if (!Bone || !MouthComp || bIsTakingItem) return;
+
+	Bone->DisablePhysics();
+
+	FAttachmentTransformRules AttachRules(
+		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::KeepWorld,
+		false
+	);
+	Bone->AttachToComponent(MouthComp, AttachRules);
+
+	bIsTakingItem = true;
+}
+void ABaseDogPawn::DetachItemFromMouth()
+{
+	if (!Bone || !MouthComp || !bIsTakingItem) return;
+
+	Bone->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+	Bone->EnablePhysics();
+	ClearItemBone();
+}
+void ABaseDogPawn::ClearItemBone()
+{
+	Bone = nullptr;
+	bIsTakingItem = false;
+}
+
 void ABaseDogPawn::UpdatePositionY(float DeltaTime)
 {
 	if (!CollisionHead || !CollisionBody) return;
@@ -286,6 +601,14 @@ void ABaseDogPawn::BeginPlay()
 		CollisionBody->IgnoreComponentWhenMoving(CollisionHead, true);
 		CollisionHead->IgnoreComponentWhenMoving(CollisionBody, true);
 	}
+
+	GetWorldTimerManager().SetTimer(
+		InteractTimer,
+		this,
+		&ABaseDogPawn::CanInteractWithObjects,
+		0.1f,
+		true
+	);
 }
 
 // Called every frame
