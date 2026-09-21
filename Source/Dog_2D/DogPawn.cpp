@@ -18,22 +18,18 @@ ADogPawn::ADogPawn()
 
 void ADogPawn::Move(float Value)
 {
-	Super::Move(Value);
-
-	if (!bIsInteracting && !FMath::IsNearlyZero(Value, 0.1f))
+	if (bIsInteracting)
 	{
-		if (Value < 0.f)
-		{
-			OnLookLeftVisual();
-		}
-		else if (Value > 0.f)
-		{
-			OnLookRightVisual();
-		}
+		VelocityX = Value * MoveSpeed;
+
+		SetMoveDirection(Value);
+
+		FVector DeltaLocation(VelocityX * GetWorld()->GetDeltaSeconds(), 0.f, 0.f);
+		AddActorWorldOffset(DeltaLocation, true);
 	}
 	else
 	{
-		SetMoveDirection(Value);
+		Super::Move(Value);
 	}	
 }
 void ADogPawn::StopMove()
