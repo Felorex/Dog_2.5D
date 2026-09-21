@@ -1,1 +1,5 @@
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+
+*.htm linguist-detectable=false
 *.html linguist-detectable=false
