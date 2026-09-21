@@ -2,13 +2,19 @@
 
 
 #include "NpcDogPawn.h"
-
+#include "DogPawn.h"
+#include "kismet/GameplayStatics.h"
+#include "GameFramework/Character.h"
 
 ANpcDogPawn::ANpcDogPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	CurrentState = EDogState::Alert;
+
+	PlayerFounded = false;
+
+	PlayerTarget = nullptr;
 
 	AiMoveDirection = 1.f;
 }
@@ -31,11 +37,54 @@ void ANpcDogPawn::CheckHomeLocation()
 	}
 }
 
+
+
+void ANpcDogPawn::CanInteractWithObjects()
+{
+	Super::CanInteractWithObjects();
+
+	if (PlayerFounded) return;
+
+	else if (!PlayerFounded && CurrentState == EDogState::Repose && TerritoryTriger)
+	{
+		ADogPawn* Player = Cast<ADogPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+
+		if (Player)
+		{
+			PlayerTarget = Player;
+
+			if(PlayerTarget->GetActorLocation().X > TerritoryTriger->GetActorLocation().X)
+			{
+				PlayerFounded = true;
+
+				StartToChase();
+			}
+		}
+	}
+}
+void ANpcDogPawn::StartToChase()
+{
+	if (!PlayerTarget) return;
+
+	if (PlayerTarget)
+	{
+		float PlayerX = PlayerTarget->GetActorLocation().X;
+		float TrigerX = TerritoryTriger->GetActorLocation().X;
+
+		if (PlayerX >= TrigerX)
+		{
+			CurrentState = EDogState::Chase;
+			OnCrouchReleased();
+		}
+	}
+}
 void ANpcDogPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
 	HomeX = GetActorLocation().X;
+
+
 
 	GetWorldTimerManager().SetTimer(
 		PatrolTimerHandle,
@@ -54,5 +103,5 @@ void ANpcDogPawn::Tick(float DeltaTime)
 	{
 		CheckHomeLocation();
 	}
-	//Move(AiMoveDirection);
+
 }
