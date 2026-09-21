@@ -52,6 +52,17 @@ void ABaseDogPawn::Move(float Value)
 		return;
 	}
 
+	if (!FMath::IsNearlyZero(Value, 0.1f))
+	{
+		if (Value < 0.f)
+		{
+			OnLookLeftVisual();
+		}
+		else if (Value > 0.f)
+		{
+			OnLookRightVisual();
+		}
+	}
 
 	FVector DeltaLocation(DeltaX, 0.0f, 0.0f);
 	FHitResult MoveResult;
