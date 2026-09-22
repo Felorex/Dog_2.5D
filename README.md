@@ -20,7 +20,7 @@ To eliminate code duplication and create a scalable foundation, the project has 
 \* `ECC_GameTraceChannel1` (`PickupObject`) — A specialized object type dedicated strictly to small lootable items (e.g., bones).
 \* `ECC_GameTraceChannel2` (`InteractTrace`) — A custom visibility/trace channel optimized for high-performance scanning. 
 Using these channels, the base class runs a focused `BoxTraceMulti` (X=30, Y=30, Z=65, Z-offset +5.0f). This completely bypasses heavy environment sweeps, ignoring static geometry, walls, and character meshes at the physics-engine level.
-\* Player-Exclusive Box Interaction: All complex logic for grabbing, pushing, pulling, and alignment with heavy interactive boxes (`AInteractiveBox`) has been isolated and moved strictly into the Main Character class (GG). The NPC dogs remain "blind" to heavy boxes, ensuring proper game-logic decoupling.
+\* Player-Exclusive Box Interaction: All complex logic for grabbing, pushing, pulling, and alignment with heavy interactive boxes (`AInteractiveBox`) has been isolated and moved strictly into the Main Character class (`ADogPawn`). The NPC dogs remain "blind" to heavy boxes, ensuring proper game-logic decoupling.
 
 \## Implemented Features & Core Physics Solutions
 
