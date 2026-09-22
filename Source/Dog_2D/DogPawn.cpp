@@ -14,6 +14,9 @@ ADogPawn::ADogPawn()
 	bIsInteracting = false;
 	bIsPushing = false;
 	bIsPulling = false;
+
+	IsScared = false;
+	ScarySpeed = 400.f;
 }
 
 void ADogPawn::Move(float Value)
@@ -318,6 +321,47 @@ float ADogPawn::GetContainerForward() const
 	return FMath::Sign(Conteiner->GetForwardVector().X);
 }
 
+void ADogPawn::SetIsScared(bool NewIsScared)
+{
+	IsScared = NewIsScared;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		if (NewIsScared)
+		{
+			DisableInput(PC);
+		}
+		else
+		{
+			EnableInput(PC);
+		}
+	}
+}
+
+void ADogPawn::ScaredRun()
+{
+	if (!SafeZone || !IsScared) return;
+		
+	OnLookLeftVisual();
+
+	float DogX = GetActorLocation().X;
+	float SafeX = SafeZone->GetActorLocation().X;
+
+	float DeltaX = -ScarySpeed * GetWorld()->GetDeltaSeconds();
+
+	if (DogX <= SafeX)
+	{
+		ForceStopMovement();
+		DeltaX = 0.f;
+
+		SetIsScared(false);
+		return;
+	}
+
+	FVector DeltaLocation(DeltaX, 0.f, 0.f);
+	AddActorWorldOffset(DeltaLocation, true);
+}
 
 // Called when the game starts or when spawned
 void ADogPawn::BeginPlay()
@@ -347,7 +391,12 @@ void ADogPawn::Tick(float DeltaTime)
 	if (!bWantToCrouch && IsCrouching)
 	{
 		TryStandUp();
-	}	
+	}
+
+	if (IsScared)
+	{
+		ScaredRun();
+	}
 }
 
 // Called to bind functionality to input

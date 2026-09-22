@@ -74,6 +74,9 @@ public:
 
 	float GetBottomZ() const;
 
+	float GetMinCollisionX() const;
+	float GetMaxCollisionX() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -55,6 +55,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
 	void SetMoveDirection(float Value);
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scary_Event")
+	AActor* SafeZone;
+
+	void ScaredRun();
+
+	void SetIsScared(bool NewIsScared);
+
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
 	float GetHeadEdgeY() const;
@@ -79,4 +86,7 @@ protected:
 		
 	bool bIsPushing;
 	bool bIsPulling;
+
+	bool IsScared;
+	float ScarySpeed;
 };

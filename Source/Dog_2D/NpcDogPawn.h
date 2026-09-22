@@ -36,7 +36,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Dog_AI")
 	ADogPawn* PlayerTarget;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Dog_AI")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
+	AActor* TerritoryTrigger;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
 	float TerritoryRadius;
 
 	FVector DoghouseLocation;
@@ -46,13 +49,15 @@ protected:
 
 	virtual void BeginPlay() override;
 	
-	void ChangeMovementDirection();
+	virtual void CanInteractWithObjects() override;
+
+	void StartToChase();
+
+	void ChaseMovement();
 
 	void CheckHomeLocation();
 
+	bool PlayerFounded;
+
 	float HomeX;
-
-	float AiMoveDirection;
-
-	FTimerHandle PatrolTimerHandle;
 };
