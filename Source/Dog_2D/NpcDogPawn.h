@@ -37,7 +37,7 @@ public:
 	ADogPawn* PlayerTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
-	AActor* TerritoryTriger;
+	AActor* TerritoryTrigger;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
 	float TerritoryRadius;
@@ -53,15 +53,11 @@ protected:
 
 	void StartToChase();
 
-	void ChangeMovementDirection();
+	void ChaseMovement();
 
 	void CheckHomeLocation();
 
 	bool PlayerFounded;
 
 	float HomeX;
-
-	float AiMoveDirection;
-
-	FTimerHandle PatrolTimerHandle;
 };

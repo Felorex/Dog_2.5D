@@ -437,6 +437,25 @@ float ABaseDogPawn::GetBottomZ() const
 	return GetActorLocation().Z - CollisionBody->GetScaledBoxExtent().Z;
 }
 
+float ABaseDogPawn::GetMinCollisionX() const
+{
+	if (!CollisionBody || !CollisionHead) return GetActorLocation().X;
+
+	float BodyLeft = CollisionBody->GetComponentLocation().X - CollisionBody->GetScaledBoxExtent().X;
+	float HeadLeft = CollisionHead->GetComponentLocation().X - CollisionHead->GetScaledBoxExtent().X;
+
+	return FMath::Min(BodyLeft, HeadLeft);
+}
+float ABaseDogPawn::GetMaxCollisionX() const
+{
+	if (!CollisionBody || !CollisionHead) return GetActorLocation().X;
+
+	float BodyRight = CollisionBody->GetComponentLocation().X + CollisionBody->GetScaledBoxExtent().X;
+	float HeadRight = CollisionHead->GetComponentLocation().X + CollisionHead->GetScaledBoxExtent().X;
+
+	return FMath::Max(BodyRight, HeadRight);
+}
+
 void ABaseDogPawn::ClearInteractiveBox()
 {
 	Box = nullptr;

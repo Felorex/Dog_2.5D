@@ -16,13 +16,8 @@ ANpcDogPawn::ANpcDogPawn()
 
 	PlayerTarget = nullptr;
 
-	AiMoveDirection = 1.f;
 }
 
-void ANpcDogPawn::ChangeMovementDirection()
-{
-	AiMoveDirection *= -1.f;
-}
 
 void ANpcDogPawn::CheckHomeLocation()
 {
@@ -45,7 +40,7 @@ void ANpcDogPawn::CanInteractWithObjects()
 
 	if (PlayerFounded) return;
 
-	else if (!PlayerFounded && CurrentState == EDogState::Repose && TerritoryTriger)
+	else if (!PlayerFounded && CurrentState == EDogState::Repose && TerritoryTrigger)
 	{
 		ADogPawn* Player = Cast<ADogPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 
@@ -53,7 +48,7 @@ void ANpcDogPawn::CanInteractWithObjects()
 		{
 			PlayerTarget = Player;
 
-			if(PlayerTarget->GetActorLocation().X > TerritoryTriger->GetActorLocation().X)
+			if(PlayerTarget->GetActorLocation().X > TerritoryTrigger->GetActorLocation().X)
 			{
 				PlayerFounded = true;
 
@@ -69,7 +64,7 @@ void ANpcDogPawn::StartToChase()
 	if (PlayerTarget)
 	{
 		float PlayerX = PlayerTarget->GetActorLocation().X;
-		float TrigerX = TerritoryTriger->GetActorLocation().X;
+		float TrigerX = TerritoryTrigger->GetActorLocation().X;
 
 		if (PlayerX >= TrigerX)
 		{
@@ -78,21 +73,45 @@ void ANpcDogPawn::StartToChase()
 		}
 	}
 }
+void ANpcDogPawn::ChaseMovement()
+{
+	if (!PlayerTarget) return;
+
+	float PlayerX = PlayerTarget->GetActorLocation().X;
+	float DogX = GetActorLocation().X;
+	float TriggerX = TerritoryTrigger->GetActorLocation().X;
+
+	float StopDistance = TriggerX - TerritoryRadius;
+
+	if (DogX <= StopDistance)
+	{
+		ForceStopMovement();
+		Move(0.f);
+
+		return;
+	}
+
+	float Distance = (PlayerX > DogX) ? (PlayerTarget->GetMinCollisionX() - GetMaxCollisionX()) : (GetMinCollisionX() - PlayerTarget->GetMaxCollisionX());
+
+	if (Distance > 8.f)
+	{
+		float Direction = (PlayerX > DogX) ? 1.f : -1.f;
+		Move(Direction);
+	}
+	else
+	{
+		ForceStopMovement();
+		Move(0.f);
+		PlayerTarget->SetIsScared(true);
+	}
+}
+
 void ANpcDogPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
 	HomeX = GetActorLocation().X;
 
-
-
-	GetWorldTimerManager().SetTimer(
-		PatrolTimerHandle,
-		this,
-		&ANpcDogPawn::ChangeMovementDirection,
-		3.0,
-		true
-	);
 }
 
 void ANpcDogPawn::Tick(float DeltaTime)
@@ -102,6 +121,10 @@ void ANpcDogPawn::Tick(float DeltaTime)
 	if (CurrentState == EDogState::Alert)
 	{
 		CheckHomeLocation();
+	}
+	if (CurrentState == EDogState::Chase)
+	{
+		ChaseMovement();
 	}
 
 }
