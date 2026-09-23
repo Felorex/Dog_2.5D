@@ -42,6 +42,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
 	float TerritoryRadius;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "BiteVisual")
+	void OnBitingVisual();
+
 	FVector DoghouseLocation;
 
 
@@ -55,9 +58,16 @@ protected:
 
 	void ChaseMovement();
 
+	void Biting();
+
 	void CheckHomeLocation();
 
+	bool CheckBiting() const;
+	float GetDistance() const;
+
 	bool PlayerFounded;
+
+	bool CanBite;
 
 	float HomeX;
 };

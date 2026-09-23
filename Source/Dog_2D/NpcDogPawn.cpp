@@ -13,6 +13,7 @@ ANpcDogPawn::ANpcDogPawn()
 	CurrentState = EDogState::Alert;
 
 	PlayerFounded = false;
+	CanBite = false;
 
 	PlayerTarget = nullptr;
 
@@ -73,6 +74,31 @@ void ANpcDogPawn::StartToChase()
 		}
 	}
 }
+
+float ANpcDogPawn::GetDistance() const
+{
+	if (!PlayerTarget) return GetActorLocation().X;
+
+	float PlayerX = PlayerTarget->GetActorLocation().X;
+	float DogX = GetActorLocation().X;
+
+	return (PlayerX > DogX) ? (PlayerTarget->GetMinCollisionX() - GetMaxCollisionX()) : (GetMinCollisionX() - PlayerTarget->GetMaxCollisionX());
+}
+bool ANpcDogPawn::CheckBiting() const
+{
+	if (!PlayerTarget) return false;
+
+	if (PlayerTarget->GetIsScared())
+	{
+		return false;
+	}
+
+	if (GetDistance() <= 8.f)
+	{
+		return true;
+	}
+	return false;
+}
 void ANpcDogPawn::ChaseMovement()
 {
 	if (!PlayerTarget) return;
@@ -91,19 +117,17 @@ void ANpcDogPawn::ChaseMovement()
 		return;
 	}
 
-	float Distance = (PlayerX > DogX) ? (PlayerTarget->GetMinCollisionX() - GetMaxCollisionX()) : (GetMinCollisionX() - PlayerTarget->GetMaxCollisionX());
+	float Direction = (PlayerX > DogX) ? 1.f : -1.f;
+	Move(Direction);
+}
+void ANpcDogPawn::Biting()
+{
+	if (!PlayerTarget) return;
 
-	if (Distance > 8.f)
-	{
-		float Direction = (PlayerX > DogX) ? 1.f : -1.f;
-		Move(Direction);
-	}
-	else
-	{
-		ForceStopMovement();
-		Move(0.f);
-		PlayerTarget->SetIsScared(true);
-	}
+	ForceStopMovement();
+	Move(0.f);
+	OnBitingVisual();
+	PlayerTarget->SetIsScared(true);
 }
 
 void ANpcDogPawn::BeginPlay()
@@ -125,6 +149,10 @@ void ANpcDogPawn::Tick(float DeltaTime)
 	if (CurrentState == EDogState::Chase)
 	{
 		ChaseMovement();
+	}
+	if (CheckBiting())
+	{
+		Biting();
 	}
 
 }

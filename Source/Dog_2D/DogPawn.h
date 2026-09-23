@@ -62,6 +62,8 @@ public:
 
 	void SetIsScared(bool NewIsScared);
 
+	bool GetIsScared() const;
+
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
 	float GetHeadEdgeY() const;
