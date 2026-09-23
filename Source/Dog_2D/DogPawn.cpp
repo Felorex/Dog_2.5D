@@ -338,7 +338,10 @@ void ADogPawn::SetIsScared(bool NewIsScared)
 		}
 	}
 }
-
+bool ADogPawn::GetIsScared() const
+{
+	return IsScared;
+}
 void ADogPawn::ScaredRun()
 {
 	if (!SafeZone || !IsScared) return;
