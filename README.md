@@ -60,19 +60,40 @@ Using these channels, the base class runs a focused `BoxTraceMulti` (X=30, Y=30,
 \* Hierarchical Socket Component Binding: Created a dedicated `USceneComponent` (`MouthAttachPoint`) attached directly to the dog's head collision. Items are dynamically nested into this component using `FAttachmentTransformRules::SnapToTarget`, allowing the item mesh to automatically mirror head movements.
 \* Sub-Millimeter Floating-Point Synchronization Fix: Fixed a critical bug where physics-based interaction with heavy boxes would seize or stutter due to timeline rounding errors (returning Z=0.0 or a sign-flipped -0 value instead of the factory default Z=0.6). Adjusting the timeline's baseline targets to a rigid 0.6 value successfully eliminated collision desynchronization.
 
-\## Latest Update: Dynamic NPC Booth AI (`ANpcDogPawn`)
+\### 2D NPC Dog AI System (`ANpcDogPawn`)
 
-Implemented a state-driven behavior matrix for autonomous NPC dogs, perfectly combining startup physical testing with performant state transitions:
+Technical documentation for a robust, highly optimized, and scalable Finite State Machine (FSM) governing a guard dog NPC in a 2D platformer game built with Unreal Engine. The system is designed using clean state isolation and strict transition triggers to completely prevent frame-by-frame event flooding inside the `Tick` loop.
 
-\** 1. Delayed Physics Verification: In the constructor, the NPC dog is initialized in `EDogState::Alert`. This allows us to spawn the NPC slightly above the ground in the editor, ensuring that engine physics and gravity drop the dog onto the surface correctly upon game startup.
-\** 2. Tick Sleep for Optimization: The home location check inside `Tick` runs strictly while the dog is still in the `Alert` state. The second the dog satisfies the landing and home conditions, the state switches, and the code blocks further `Tick` execution for this logic, saving CPU power.
-\** 3. Sub-Centimeter Anti-Drift Home Trigger (`CheckHomeLocation`):
-\* Calculates the absolute difference between the current location and the home point via `FMath::Abs(CurrentLoc - HomeX) <= 5.f` to prevent physical displacement bugs.
-\* Once grounded (`IsGrounded`), it instantly fires a visual turn command to face left (`OnLookLeftVisual()`).
-\* Directly invokes the encapsulated base-class method `OnCrouchPressed()`, cleanly shifting the NPC into `EDogState::Repose` and making the dog lie down inside its booth automatically.
+\## Implemented FSM Architecture (EDogState)
+
+The NPC AI is managed via a central `switch` dispatcher located inside `Tick()`, neatly isolating the logic and execution bounds of each individual behavior phase:
+
+\** 1. `EDogState::InitHome` (Blind Startup Walk): 
+\* Upon game startup or initial scene spawn, the dog initializes in this state to walk back into its booth completely blind to the player. The global detection radar is ignored during this phase, preventing premature aggression or broken initialization animations.
+\** 2. `EDogState::Repose` (Booth Slumber/Rest): 
+\* The dog rests inside its doghouse with structural movement forced to zero. A proximity-based trigger zone (`TerritoryTrigger`) is continuously monitored. Crossing this boundary triggers the detection radar and immediately kicks the dog into a chase.
+\** 3. `EDogState::Chase` (Active Pursuit): 
+\* Executes responsive dynamic movement toward the player character (`ChaseMovement()`). The dog continues running until it reaches its physical leash limit defined by `IsAtLeashEdge()` or the player disappears behind a hiding spot.
+\** 4. `EDogState::Barking` (Static Leash Leaning): 
+\* Triggers strictly when the dog is at its max leash distance. It executes the barking visual logic exactly once using an internal boolean latch (`IsBarkingVisual`), cleanly preventing high-frequency Blueprint node execution.
+\** 5. `EDogState::Alert` (Vigilance & Reaction Delay Switchboard): 
+\* Acts as the central tactical "traffic light" of the AI system, operating two independent time counters to evaluate whether the dog should go home or double back for the player.
+
+\## Tactical Branching & Interception Logic
+
+\** Isolated Vigilance Switchboard (`StartToAlert`)
+When in the `Alert` state, the dog’s behavior branches into two strictly mutually exclusive execution paths depending on the player's visibility:
+\* Target Hidden (Player is behind the bush): The system counts the elapsed time via `AlertTimer`. If the player remains hidden for more than 3.0 seconds, the dog wipes its active memory clean (`PlayerTarget = nullptr`, `PlayerFounded = false`) and steps away into `EDogState::ReturnToDoghouse`.
+\* Target Revealed (Player intercepts the dog's path home): If the dog was walking home but the player suddenly emerges from behind the hiding spot, the radar catches the player and drops the dog back into `Alert`. The dog abruptly halts, rotates visually to face the player, and waits/stares for exactly 1.0 second. Once this delay expires, if the dog is still far from the leash edge, it snaps into `EDogState::Chase` to renew pursuit.
+
+\## High-Priority Absolute Bite (`Biting`)
+The physical contact verification (`CheckBiting()`) is evaluated outside the core state machine `switch` block, establishing absolute priority. Regardless of the current state, close contact with the main character instantly forces a bite event, freezing momentum and scaring the player (`SetIsScared(true)`). Due to an integrated fear cooldown check, the dog instantly resumes its normal pursuit cycle without structural looping glitches.
+
+\## Sub-Centimeter Anti-Drift Home Return (`ReturnToHome`)
+Arrival verification is handled accurately via `FMath::Abs(CurrentLoc - HomeX) <= 5.f` to neutralize minor sliding physics. Upon reaching the threshold and confirming the ground state (`IsGrounded`), the dog kills its velocity, turns to face left (`OnLookLeftVisual()`), flushes residual player flags out of memory, and seats itself neatly into the resting posture.
+
 
 \## Future Development Roadmap
 
-@Player Target Tracking: Implement player tracking using `UGameplayStatics::GetPlayerCharacter` to feed coordinates to the NPC dog.
-@State-Driven Pursuit (`EDogState::Chase`): Build a responsive chase behavior loop that updates the `AiMoveDirection` based on the player's position relative to the dog.
-@Dynamic Aggro & Leash Zones: Add distance-based checks to make the dog stop chasing or return to its home booth (`EDogState::Repose`) if the player gets too far.
+Tick Sleep Optimization: Integrate `SetActorTickEnabled(false)` while in `EDogState::Repose`, forcing the system to sleep until the background interaction sensor wakes up the main thread component upon player breach.
+- Vertical Platform Constraints (Box Checking): Expand the state logic to evaluate the player's location along the Z-axis, enabling the dog to stop right beneath platforms/crates, keeping the target cornered from below while continuously barking.
