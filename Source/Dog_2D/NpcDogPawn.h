@@ -12,6 +12,7 @@ class ADogPawn;
 UENUM(BlueprintType)
 enum class EDogState : uint8 
 {
+	InitHome UMETA(DisplayName = "Init Home"),
 	Repose UMETA(DisplayName = "Repose"),
 	Chase UMETA(DisplayName = "Chase"),
 	Barking UMETA(DisplayName = "Barking"),
@@ -40,10 +41,19 @@ public:
 	AActor* TerritoryTrigger;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
+	AActor* TargetDisappeared;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
 	float TerritoryRadius;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "BiteVisual")
 	void OnBitingVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "BarkVisual")
+	void OnBarkingVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "BarkVisual")
+	void OnStopBarkingVisual();
 
 	FVector DoghouseLocation;
 
@@ -55,19 +65,35 @@ protected:
 	virtual void CanInteractWithObjects() override;
 
 	void StartToChase();
-
 	void ChaseMovement();
 
+	void ReadyToAlert();
+
+	void StartBarking();
+	void StartToAlert(float DeltaTime);
+
 	void Biting();
+	
+	void TransitionToAlert();
+	void TransitionToBarking();
+	void TransitionToChase();
+
+	void ReturnToHome();
 
 	void CheckHomeLocation();
 
+	bool CheckTargetVisible() const;
 	bool CheckBiting() const;
-	float GetDistance() const;
+	bool CheckTargetInTriggerZone() const;
+
+	float GetDistanceToTarget() const;
+	float GetStopDistance() const;
+
+	bool IsAtLeashEdge() const;
 
 	bool PlayerFounded;
-
-	bool CanBite;
+	bool IsBarkingVisual;
 
 	float HomeX;
+	float AlertTimer;
 };
