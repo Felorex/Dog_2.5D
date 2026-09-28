@@ -6,7 +6,13 @@ A highly advanced iteration of my 2D Dog Platformer prototype (https://github.co
 
 
 
-https://github.com/user-attachments/assets/e42f6fed-ef22-41dc-8758-de8d645ec504
+
+
+https://github.com/user-attachments/assets/2f6b37c0-545f-4045-ab91-5cec1d7d0d01
+
+
+
+
 
 
 
