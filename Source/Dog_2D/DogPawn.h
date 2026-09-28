@@ -66,8 +66,6 @@ public:
 
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
-	float GetHeadEdgeY() const;
-	float GetHeadEdgeZ() const;
 	bool GetIsPulling() const { return bIsPulling; }
 	bool GetIsPushing() const { return bIsPushing; }
 	float GetContainerForward() const;
