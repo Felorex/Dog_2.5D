@@ -296,24 +296,6 @@ float ADogPawn::GetHeadEdgeX() const
 	float Direction = FMath::Sign(Conteiner->GetForwardVector().X);
 	return CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);
 }
-float ADogPawn::GetHeadEdgeY() const
-{
-	if (!Conteiner || !CollisionHead) return GetActorLocation().Y;
-
-	float HeadCenterY = CollisionHead->GetComponentLocation().Y;
-	float HeadExtentY = CollisionHead->GetScaledBoxExtent().Y;
-
-	return HeadCenterY - HeadExtentY;
-}
-float ADogPawn::GetHeadEdgeZ() const
-{
-	if (!CollisionHead) return GetActorLocation().Z;
-
-	float HeadCenterZ = CollisionHead->GetComponentLocation().Y;
-	float HeadExtentZ = CollisionHead->GetScaledBoxExtent().Z;
-
-	return HeadCenterZ + HeadExtentZ;
-}
 
 float ADogPawn::GetContainerForward() const
 {
@@ -345,15 +327,28 @@ bool ADogPawn::GetIsScared() const
 void ADogPawn::ScaredRun()
 {
 	if (!SafeZone || !IsScared) return;
-		
-	OnLookLeftVisual();
 
 	float DogX = GetActorLocation().X;
 	float SafeX = SafeZone->GetActorLocation().X;
 
-	float DeltaX = -ScarySpeed * GetWorld()->GetDeltaSeconds();
+	float Direction = (DogX > SafeX) ? -1.f : 1.f;
 
-	if (DogX <= SafeX)
+	float DeltaX = 0.f;
+
+	if (Direction > 0)
+	{
+		OnLookRightVisual();
+		DeltaX = ScarySpeed * GetWorld()->GetDeltaSeconds();
+	}
+	else
+	{
+		OnLookLeftVisual();
+		DeltaX = -ScarySpeed * GetWorld()->GetDeltaSeconds();
+	}
+	
+	float DistanceToSafe = FMath::Abs(SafeX - DogX);
+
+	if (DistanceToSafe <= 10.f)
 	{
 		ForceStopMovement();
 		DeltaX = 0.f;

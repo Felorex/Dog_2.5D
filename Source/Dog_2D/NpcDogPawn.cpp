@@ -34,6 +34,7 @@ void ANpcDogPawn::ReturnToHome()
 		OnCrouchPressed();
 
 		//tick disable
+		SetActorTickEnabled(false);
 	}
 	else
 	{
@@ -65,6 +66,8 @@ void ANpcDogPawn::CanInteractWithObjects()
 			{
 				PlayerTarget = Player;
 				PlayerFounded = true;
+
+				SetActorTickEnabled(true);
 			}
 		}
 		else

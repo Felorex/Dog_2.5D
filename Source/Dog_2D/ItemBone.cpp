@@ -131,21 +131,18 @@ void AItemBone::BeginPlay()
 
 	FVector StartLocation = GetActorLocation();
 
-	FTimerHandle* IntegralTimerHandle = new FTimerHandle;
-
-	GetWorldTimerManager().SetTimer(*IntegralTimerHandle, [this, StartLocation, IntegralTimerHandle]()
+	GetWorldTimerManager().SetTimer(GroundCheckTimerHandle, [this, StartLocation]()
 		{
 			if (IsOnGround())
 			{
-				GetWorldTimerManager().ClearTimer(*IntegralTimerHandle);
-				delete IntegralTimerHandle;
+				GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
 				return;
 			}
 			SetActorLocation(StartLocation);
 			VelocityZ = 0.0f;
 			SetActorTickEnabled(true);
 
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ItemBone: Reset to StartLocation"));
+			GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
 		}, 0.1f, false);
 }
 
