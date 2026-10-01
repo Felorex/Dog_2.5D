@@ -12,6 +12,8 @@ ANpcDogPawn::ANpcDogPawn()
 
 	CurrentState = EDogState::InitHome;
 
+	bCanTakeItem = true;
+
 	PlayerFounded = false;
 	IsBarkingVisual = false;
 
@@ -20,32 +22,89 @@ ANpcDogPawn::ANpcDogPawn()
 	AlertTimer = 0.f;
 }
 
-void ANpcDogPawn::ReturnToHome()
+bool ANpcDogPawn::CheckHomeLocation() const
 {
 	float CurrentLoc = GetActorLocation().X;
 
 	if (FMath::Abs(CurrentLoc - HomeX) <= 5.f && IsGrounded)
 	{
+		return true;
+	}
+	return false;
+}
+void ANpcDogPawn::ReturnToHome()
+{
+	float CurrentLoc = GetActorLocation().X;
+
+	float Direction = (CurrentLoc < HomeX) ? 1.f : -1.f;
+	Move(Direction);
+}
+void ANpcDogPawn::TransitionToRepose()
+{
+	ForceStopMovement();
+	Move(0.f);
+	OnLookLeftVisual();
+
+	CurrentState = EDogState::Repose;
+	OnCrouchPressed();
+	
+	//tick disable
+	SetActorTickEnabled(false);
+}
+void ANpcDogPawn::TransitionToDeactivated()
+{
+	ForceStopMovement();
+	Move(0.f);
+	OnLookLeftVisual();
+
+	OnCrouchPressed();
+
+	//tick disable
+	SetActorTickEnabled(false);
+}
+void ANpcDogPawn::CheckBoneInsideTerritory()
+{
+	if (IsAtLeashEdge() || !Bone) return;
+
+	float Direction = FMath::Sign(Conteiner->GetForwardVector().X);
+	float BoneX = Bone->GetActorLocation().X;
+	float HeadX = CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);		
+	
+	if (FMath::Abs(BoneX - HeadX) <= 10.f)
+	{
 		ForceStopMovement();
 		Move(0.f);
-		OnLookLeftVisual();
 
-		CurrentState = EDogState::Repose;
-		OnCrouchPressed();
+		PlayerFounded = true;
+		PlayerTarget = nullptr;
 
-		//tick disable
-		SetActorTickEnabled(false);
+		if (bCanTakeItem)
+		{
+			bCanTakeItem = false;
+			TakeItemPressed();
+		}
+		else
+		{
+			CurrentState = EDogState::Deactivated;
+		}
 	}
-	else
+}
+void ANpcDogPawn::CanComeBackHome()
+{	
+	if(bIsTakingItem)
 	{
-		float Direction = (CurrentLoc < HomeX) ? 1.f : -1.f;
-		Move(Direction);
+		ReturnToHome();
 	}
 }
 
 void ANpcDogPawn::CanInteractWithObjects()
 {
 	Super::CanInteractWithObjects();
+
+	if (Bone)
+	{
+		CheckBoneInsideTerritory();
+	}
 
 	if (PlayerFounded) return;
 
@@ -285,17 +344,24 @@ void ANpcDogPawn::Tick(float DeltaTime)
 		case EDogState::ReturnToDoghouse:
 			StateText = TEXT("ReturnToDoghouse (Going Home)"); 
 			break; 
+		case EDogState::Deactivated:
+			StateText = TEXT("Deactivated (Eating)");
+			break;
 		}
 		FString FoundedText = PlayerFounded ? TEXT("TRUE (Found)") : TEXT("FALSE (Not Found)");
 		FString TargetText = PlayerTarget ? FString::Printf(TEXT("VALID (%s)"), *PlayerTarget->GetName()) : TEXT("NULLPTR (Empty Memory)");
 		FString VisibleText = CheckTargetVisible() ? TEXT("TRUE (Visible)") : TEXT("FALSE (Hidden)");
 		FString EdgeText = IsAtLeashEdge() ? TEXT("TRUE (At Edge)") : TEXT("FALSE (Not At Edge)");
+		FString BoneText = Bone ? FString::Printf(TEXT("VALID (%s)"), *Bone->GetName()) : TEXT("NULLPTR (Empty Bone)");
+		FString TakingText = bIsTakingItem ? TEXT("TRUE (Bone in Mouth)") : TEXT("FALSE (Not At Edge)");
 		
 		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::Yellow, FString::Printf(TEXT("[Dog State]: %s"), *StateText));
 		GEngine->AddOnScreenDebugMessage(2, 0.f, FColor::Cyan, FString::Printf(TEXT("[Player Founded]: %s"), *FoundedText));
 		GEngine->AddOnScreenDebugMessage(3, 0.f, FColor::Orange, FString::Printf(TEXT("[Player Target]: %s"), *TargetText));
 		GEngine->AddOnScreenDebugMessage(4, 0.f, FColor::Purple, FString::Printf(TEXT("[Target Visible]: %s"), *VisibleText));
 		GEngine->AddOnScreenDebugMessage(5, 0.f, FColor::Green, FString::Printf(TEXT("[Is At Leash Edge]: %s"), *EdgeText));
+		GEngine->AddOnScreenDebugMessage(6, 0.f, FColor::Red, FString::Printf(TEXT("[Bone Pointer]: %s"), *BoneText));
+		GEngine->AddOnScreenDebugMessage(7, 0.f, FColor::Magenta, FString::Printf(TEXT("[Is Taking Item]: %s"), *TakingText));
 	}
 
 
@@ -303,6 +369,7 @@ void ANpcDogPawn::Tick(float DeltaTime)
 	{
 	case EDogState::InitHome:
 		ReturnToHome();
+		if (CheckHomeLocation()) { TransitionToRepose(); }
 		break;
 	case EDogState::Repose:
 		StartToChase();
@@ -321,13 +388,18 @@ void ANpcDogPawn::Tick(float DeltaTime)
 		break;
 	case EDogState::ReturnToDoghouse:
 		ReturnToHome();
-		if (CheckTargetVisible()) { TransitionToAlert(); }
+		if (CheckHomeLocation()) { TransitionToRepose(); }
+		else if (CheckTargetVisible()) { TransitionToAlert(); }
+		break;
+	case EDogState::Deactivated:
+		CanComeBackHome();
+		if (CheckHomeLocation()) { TransitionToDeactivated(); }
 		break;
 	default:
 		break;
 	}
 
-	if (CheckBiting())
+	if (CheckBiting() && CurrentState != EDogState::Deactivated)
 	{
 		Biting();
 	}

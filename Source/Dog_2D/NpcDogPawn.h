@@ -17,7 +17,9 @@ enum class EDogState : uint8
 	Chase UMETA(DisplayName = "Chase"),
 	Barking UMETA(DisplayName = "Barking"),
 	Alert UMETA(DisplayName = "Alert"),
-	ReturnToDoghouse UMETA(DisplayName = "Return to Doghouse")
+	ReturnToDoghouse UMETA(DisplayName = "Return to Doghouse"),
+	TakeItem UMETA(DisplayName = "Take Item"),
+	Deactivated UMETA(DisplayName = "Deactivated")
 };
 
 UCLASS()
@@ -67,21 +69,23 @@ protected:
 	void StartToChase();
 	void ChaseMovement();
 
-	void ReadyToAlert();
-
 	void StartBarking();
 	void StartToAlert(float DeltaTime);
 
 	void Biting();
 	
+	void TransitionToDeactivated();
+	void TransitionToRepose();
 	void TransitionToAlert();
 	void TransitionToBarking();
 	void TransitionToChase();
 
 	void ReturnToHome();
 
-	void CheckHomeLocation();
+	void CheckBoneInsideTerritory();
+	void CanComeBackHome();
 
+	bool CheckHomeLocation() const;
 	bool CheckTargetVisible() const;
 	bool CheckBiting() const;
 	bool CheckTargetInTriggerZone() const;
@@ -91,6 +95,7 @@ protected:
 
 	bool IsAtLeashEdge() const;
 
+	bool bCanTakeItem;
 	bool PlayerFounded;
 	bool IsBarkingVisual;
 
