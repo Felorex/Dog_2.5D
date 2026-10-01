@@ -20,6 +20,7 @@ ANpcDogPawn::ANpcDogPawn()
 	PlayerTarget = nullptr;
 
 	AlertTimer = 0.f;
+	BarkingTimer = 0.f;
 }
 
 bool ANpcDogPawn::CheckHomeLocation() const
@@ -64,7 +65,7 @@ void ANpcDogPawn::TransitionToDeactivated()
 }
 void ANpcDogPawn::CheckBoneInsideTerritory()
 {
-	if (IsAtLeashEdge() || !Bone) return;
+	if (!Bone) return;
 
 	float Direction = FMath::Sign(Conteiner->GetForwardVector().X);
 	float BoneX = Bone->GetActorLocation().X;
@@ -101,7 +102,7 @@ void ANpcDogPawn::CanInteractWithObjects()
 {
 	Super::CanInteractWithObjects();
 
-	if (Bone)
+	if (Bone && !IsAtLeashEdge())
 	{
 		CheckBoneInsideTerritory();
 	}
@@ -223,8 +224,10 @@ bool ANpcDogPawn::CheckTargetVisible() const
 	return (PlayerX > DisappearedX);
 }
 
-void ANpcDogPawn::StartBarking()
+void ANpcDogPawn::StartBarking(float DeltaTime)
 {
+	BarkingTimer += DeltaTime;
+
 	if (IsBarkingVisual) return;
 
 	IsBarkingVisual = true;
@@ -233,6 +236,7 @@ void ANpcDogPawn::StartBarking()
 }
 void ANpcDogPawn::TransitionToBarking()
 {
+	BarkingTimer = 0.f;
 	CurrentState = EDogState::Barking;
 }
 void ANpcDogPawn::TransitionToChase()
@@ -245,6 +249,7 @@ void ANpcDogPawn::TransitionToAlert()
 	{
 		IsBarkingVisual = false;
 		OnStopBarkingVisual();
+		BarkingTimer = 0.f;
 	}
 
 	ForceStopMovement();
@@ -340,8 +345,8 @@ void ANpcDogPawn::Tick(float DeltaTime)
 		else { ChaseMovement(); }
 		break;
 	case EDogState::Barking:
-		StartBarking();
-		if (!CheckTargetVisible()) { TransitionToAlert(); }
+		StartBarking(DeltaTime);
+		if (!CheckTargetVisible() && !Bone) { TransitionToAlert(); }
 		break;
 	case EDogState::Alert:
 		StartToAlert(DeltaTime);

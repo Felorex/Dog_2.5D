@@ -58,6 +58,7 @@ public:
 
 	FVector DoghouseLocation;
 
+	float GetBarkingTimer() const { return BarkingTimer; }
 
 protected:
 
@@ -68,7 +69,7 @@ protected:
 	void StartToChase();
 	void ChaseMovement();
 
-	void StartBarking();
+	void StartBarking(float DeltaTime);
 	void StartToAlert(float DeltaTime);
 
 	void Biting();
@@ -100,4 +101,5 @@ protected:
 
 	float HomeX;
 	float AlertTimer;
+	float BarkingTimer;
 };
