@@ -18,7 +18,6 @@ enum class EDogState : uint8
 	Barking UMETA(DisplayName = "Barking"),
 	Alert UMETA(DisplayName = "Alert"),
 	ReturnToDoghouse UMETA(DisplayName = "Return to Doghouse"),
-	TakeItem UMETA(DisplayName = "Take Item"),
 	Deactivated UMETA(DisplayName = "Deactivated")
 };
 

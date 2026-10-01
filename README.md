@@ -70,7 +70,7 @@ Using these channels, the base class runs a focused `BoxTraceMulti` (X=30, Y=30,
 
 Technical documentation for a robust, highly optimized, and scalable Finite State Machine (FSM) governing a guard dog NPC in a 2D platformer game built with Unreal Engine. The system is designed using clean state isolation and strict transition triggers to completely prevent frame-by-frame event flooding inside the `Tick` loop.
 
-\## Implemented FSM Architecture (EDogState)
+\## Implemented FSM Architecture (`EDogState`)
 
 The NPC AI is managed via a central `switch` dispatcher located inside `Tick()`, neatly isolating the logic and execution bounds of each individual behavior phase:
 
@@ -84,6 +84,7 @@ The NPC AI is managed via a central `switch` dispatcher located inside `Tick()`,
 \* Triggers strictly when the dog is at its max leash distance. It executes the barking visual logic exactly once using an internal boolean latch (`IsBarkingVisual`), cleanly preventing high-frequency Blueprint node execution.
 \** 5. `EDogState::Alert` (Vigilance & Reaction Delay Switchboard): 
 \* Acts as the central tactical "traffic light" of the AI system, operating two independent time counters to evaluate whether the dog should go home or double back for the player.
+\** 6. `EDogState::Deactivated` (Bone Obsession & Permanent Neutralization): Forces the dog into an unbreakable, non-aggressive loop focused entirely on picking up the bait and returning home. Player detection, barking radars, and biting checks are completely shut down during this state, turning the NPC into a non-threat for the rest of the level.
 
 \## Tactical Branching & Interception Logic
 
@@ -92,14 +93,39 @@ When in the `Alert` state, the dog’s behavior branches into two strictly mutua
 \* Target Hidden (Player is behind the bush): The system counts the elapsed time via `AlertTimer`. If the player remains hidden for more than 3.0 seconds, the dog wipes its active memory clean (`PlayerTarget = nullptr`, `PlayerFounded = false`) and steps away into `EDogState::ReturnToDoghouse`.
 \* Target Revealed (Player intercepts the dog's path home): If the dog was walking home but the player suddenly emerges from behind the hiding spot, the radar catches the player and drops the dog back into `Alert`. The dog abruptly halts, rotates visually to face the player, and waits/stares for exactly 1.0 second. Once this delay expires, if the dog is still far from the leash edge, it snaps into `EDogState::Chase` to renew pursuit.
 
+\## Item Interception & Animation Race Condition Defense (Bone Mechanic)
+
+\** Pre-Collision Alignment Evaluation (`CheckBoneInsideTerritory`): 
+The background interaction sensor scans for high-priority items (`AItemBone`) within the leash radius via an optimized timer loop (`CanInteractWithObjects`), completely bypassing `Tick` updates. Once a bone is detected, the dog calculates sub-centimeter horizontal alignment between the asset and the precise edge of its face mesh using directional scaling: 
+`HeadX = CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction)`.
+
+\** The Single-Frame Latch Defense (`bCanTakeItem`): 
+To prevent the high-frequency timer loop from spamming `TakeItemPressed()` and resetting the pickup animation montage back to frame zero every frame (which freezes the NPC in a perpetual bowing loop), the system implements a strict logical gate. The `bCanTakeItem` boolean latch acts as a single-frame execution trigger:
+\** Frame N (Trigger): 
+The proximity check passes, `TakeItemPressed()` fires exactly once to initiate the visual head-lowering sequence, and `bCanTakeItem` is immediately flipped to false.
+\** Frame N+1 (State Transition): 
+On the very next execution frame, the gate diverts the code execution branch straight into the `else` block, shifting `CurrentState` to `EDogState::Deactivated`. This cleanly protects the active animation montage, allowing it to complete its playback and successfully reach its internal AnimNotify timeline event to physically attach the actor to the dog's mouth (`AttachItemToMouth`).
+\** Post-Pickup Retraction Flow (`CanComeBackHome`): 
+Once the animation event confirms physical attachment and toggles `bIsTakingItem = true`, the internal routing sequence activates `ReturnToHome()`. The dog carries the object back to its origin coordinates while actively ignoring any player input or line-of-sight visual cues.
+
 \## High-Priority Absolute Bite (`Biting`)
 The physical contact verification (`CheckBiting()`) is evaluated outside the core state machine `switch` block, establishing absolute priority. Regardless of the current state, close contact with the main character instantly forces a bite event, freezing momentum and scaring the player (`SetIsScared(true)`). Due to an integrated fear cooldown check, the dog instantly resumes its normal pursuit cycle without structural looping glitches.
 
-\## Sub-Centimeter Anti-Drift Home Return (`ReturnToHome`)
-Arrival verification is handled accurately via `FMath::Abs(CurrentLoc - HomeX) <= 5.f` to neutralize minor sliding physics. Upon reaching the threshold and confirming the ground state (`IsGrounded`), the dog kills its velocity, turns to face left (`OnLookLeftVisual()`), flushes residual player flags out of memory, and seats itself neatly into the resting posture.
+\## Decoupled Kinematic Tracking & Threshold Verification (`ReturnToHome`)
+
+\** Universal Movement Logic Integration (`ReturnToHome`): 
+To maintain a clean Separation of Concerns (SoC), the pathing logic back to the starting origin has been fully decoupled from internal AI state changes. The standalone `ReturnToHome()` method focuses strictly on physical execution, processing real-axis horizontal orientation and dynamic velocity adjustments until the coordinate threshold is reached.
+\** Sub-Centimeter Anti-Drift Threshold (`CheckHomeLocation`): 
+Arrival verification is evaluated independently via a constant predicate method `CheckHomeLocation()`. By validating `FMath::Abs(CurrentLoc - HomeX) <= 5.f` combined with a rigorous ground-state check (`IsGrounded`), the system neutralizes residual sliding physics and floating-point errors.
+\** Context-Driven Posture Transitions: 
+Once `CheckHomeLocation()` confirms the threshold breach, the external state machine switchboard intercepts execution to run context-specific cleanup sequences:
+\** Standard Return Flow: 
+Invokes` TransitionToRepose()`, flushing player-tracking flags out of active memory, forcing visual left-orientation (`OnLookLeftVisual()`), triggering crouch assets, and killing CPU updates via `SetActorTickEnabled(false)`.
+\** Bone Distraction Return Flow: 
+Invokes `TransitionToDeactivated()`, permanently locking the NPC into its restful slumber posture with the attached item mesh fixed in place.
 
 
 \## Future Development Roadmap
 
-Tick Sleep Optimization: Integrate `SetActorTickEnabled(false)` while in `EDogState::Repose`, forcing the system to sleep until the background interaction sensor wakes up the main thread component upon player breach.
-- Vertical Platform Constraints (Box Checking): Expand the state logic to evaluate the player's location along the Z-axis, enabling the dog to stop right beneath platforms/crates, keeping the target cornered from below while continuously barking.
+\* Edge-of-Leash Tantrum Logic: Enhance the bone interception rule so that if a bone lands just beyond the hard-coded leash boundary (`IsAtLeashEdge()`), the dog transitions into a high-aggression bark cycle, dynamically locked from reaching the item while creating a tense environmental puzzle for the player.
+\* Vertical Platform Constraints (Box Checking): Expand the state logic to evaluate the player's location along the Z-axis, enabling the dog to stop right beneath platforms/crates, keeping the target cornered from below while continuously barking.

@@ -325,46 +325,6 @@ void ANpcDogPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (GEngine) {
-		FString StateText = TEXT("Unknown");
-		switch (CurrentState) 
-		{ 
-		case EDogState::Repose:
-			StateText = TEXT("Repose (Sitting in Doghouse)"); 
-			break; 
-		case EDogState::Chase:
-			StateText = TEXT("Chase (Running to Leash Edge)");
-			break; 
-		case EDogState::Barking:
-			StateText = TEXT("Barking (At the Edge)");
-			break; 
-		case EDogState::Alert:
-			StateText = TEXT("Alert (Watching/Bding)"); 
-			break; 
-		case EDogState::ReturnToDoghouse:
-			StateText = TEXT("ReturnToDoghouse (Going Home)"); 
-			break; 
-		case EDogState::Deactivated:
-			StateText = TEXT("Deactivated (Eating)");
-			break;
-		}
-		FString FoundedText = PlayerFounded ? TEXT("TRUE (Found)") : TEXT("FALSE (Not Found)");
-		FString TargetText = PlayerTarget ? FString::Printf(TEXT("VALID (%s)"), *PlayerTarget->GetName()) : TEXT("NULLPTR (Empty Memory)");
-		FString VisibleText = CheckTargetVisible() ? TEXT("TRUE (Visible)") : TEXT("FALSE (Hidden)");
-		FString EdgeText = IsAtLeashEdge() ? TEXT("TRUE (At Edge)") : TEXT("FALSE (Not At Edge)");
-		FString BoneText = Bone ? FString::Printf(TEXT("VALID (%s)"), *Bone->GetName()) : TEXT("NULLPTR (Empty Bone)");
-		FString TakingText = bIsTakingItem ? TEXT("TRUE (Bone in Mouth)") : TEXT("FALSE (Not At Edge)");
-		
-		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::Yellow, FString::Printf(TEXT("[Dog State]: %s"), *StateText));
-		GEngine->AddOnScreenDebugMessage(2, 0.f, FColor::Cyan, FString::Printf(TEXT("[Player Founded]: %s"), *FoundedText));
-		GEngine->AddOnScreenDebugMessage(3, 0.f, FColor::Orange, FString::Printf(TEXT("[Player Target]: %s"), *TargetText));
-		GEngine->AddOnScreenDebugMessage(4, 0.f, FColor::Purple, FString::Printf(TEXT("[Target Visible]: %s"), *VisibleText));
-		GEngine->AddOnScreenDebugMessage(5, 0.f, FColor::Green, FString::Printf(TEXT("[Is At Leash Edge]: %s"), *EdgeText));
-		GEngine->AddOnScreenDebugMessage(6, 0.f, FColor::Red, FString::Printf(TEXT("[Bone Pointer]: %s"), *BoneText));
-		GEngine->AddOnScreenDebugMessage(7, 0.f, FColor::Magenta, FString::Printf(TEXT("[Is Taking Item]: %s"), *TakingText));
-	}
-
-
 	switch (CurrentState)	
 	{
 	case EDogState::InitHome:
