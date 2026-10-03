@@ -16,6 +16,7 @@ ANpcDogPawn::ANpcDogPawn()
 
 	PlayerFounded = false;
 	IsBarkingVisual = false;
+	IsPunishedVisual = false;
 
 	PlayerTarget = nullptr;
 
@@ -42,6 +43,12 @@ void ANpcDogPawn::ReturnToHome()
 }
 void ANpcDogPawn::TransitionToRepose()
 {
+	if (IsPunishedVisual)
+	{
+		IsPunishedVisual = false;
+		PlayerFounded = false;
+		OnStopPunishedVisual();
+	}
 	ForceStopMovement();
 	Move(0.f);
 	OnLookLeftVisual();
@@ -238,6 +245,8 @@ void ANpcDogPawn::TransitionToBarking()
 {
 	BarkingTimer = 0.f;
 	CurrentState = EDogState::Barking;
+
+	OnBarkingState.Broadcast(true);
 }
 void ANpcDogPawn::TransitionToChase()
 {
@@ -250,6 +259,7 @@ void ANpcDogPawn::TransitionToAlert()
 		IsBarkingVisual = false;
 		OnStopBarkingVisual();
 		BarkingTimer = 0.f;
+		OnBarkingState.Broadcast(false);
 	}
 
 	ForceStopMovement();
@@ -302,6 +312,26 @@ void ANpcDogPawn::StartToAlert(float DeltaTime)
 	}
 }
 
+void ANpcDogPawn::TransitionToPunished()
+{
+	if (IsPunishedVisual) return;
+
+	ForceStopMovement();
+	Move(0.f);
+	if (IsBarkingVisual)
+	{
+		IsBarkingVisual = false;
+		OnStopBarkingVisual();
+		BarkingTimer = 0.f;
+		OnBarkingState.Broadcast(false);
+	}
+	PlayerTarget = nullptr;
+	PlayerFounded = true;
+	IsPunishedVisual = true;
+	OnPunishedVisual();
+	CurrentState = EDogState::Punished;
+}
+
 void ANpcDogPawn::Biting()
 {
 	if (!PlayerTarget) return;
@@ -347,6 +377,10 @@ void ANpcDogPawn::Tick(float DeltaTime)
 	case EDogState::Barking:
 		StartBarking(DeltaTime);
 		if (!CheckTargetVisible() && !Bone) { TransitionToAlert(); }
+		break;
+	case EDogState::Punished:
+		ReturnToHome();
+		if (CheckHomeLocation()) { TransitionToRepose(); }
 		break;
 	case EDogState::Alert:
 		StartToAlert(DeltaTime);

@@ -9,6 +9,20 @@
 
 class ANpcDogPawn;
 
+UENUM(BlueprintType)
+enum class EHouseState : uint8
+{
+	HouseSleep UMETA(DisplayName = "House Sleep"),
+	HouseWokeUp UMETA(DisplayName = "House Woke Up"),
+	LightOn UMETA(DisplayName = "Light On"),
+	HumanWatching UMETA(DisplayName = "Human Watching"),
+	PlayerCaught UMETA(DisplayName = "Player Caught"),
+	DogPunished UMETA(DisplayName = "Dog Punished"),
+	HumanLeft UMETA(DisplayName = "Human Left"),
+	LightOff UMETA(DisplayName = "Light Off")
+};
+
+
 UCLASS()
 class DOG_2D_API AHouseAlarmActor : public AActor
 {
@@ -23,11 +37,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Connection")
 	ANpcDogPawn* TargetDog;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House State")
+	EHouseState CurrentHouseState;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void HandleDogBarkingState(bool IsBarking);
 
 	UPROPERTY()
 	UStaticMeshComponent* HouseMesh;
@@ -38,8 +56,42 @@ protected:
 	UPROPERTY()
 	UBoxComponent* LightZoneCollision;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
+	UMaterialInterface* LightOnMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
+	UMaterialInterface* LightOffMaterial;
+
+	void TransitionToHouseWokeUp();
+	void TransitionToLightOn();
+	void TransitionToHumanWatching();
+	void TransitionToHumanLeft();
+	void TransitionToLightOff();
+	void TransitionToHouseSleep();
+	void TransitionToDogPunished();
+
+	void LightIsOn(float DeltaTime);
+	void LightIsOff();
+
+	void HumanWatchingInWindow(float DeltaTime);
+	void HumanLeftWindow(float DeltaTime);
+
+	void DogGetPunished();
+
+	bool DogAgainBarking();
+
+	bool CanLightOn();
+	bool CanLightOff();
+	bool CanLightOffBeforeHuman();
+	bool CanHumanWatch();
+	bool CanHumanLeft();
+	bool CanDogPunished();
+	bool CanHouseSleep();
 
 	bool IsLightActive;
 	bool IsHumanInWindow;
 	
+	float InsideLightTimer;
+	float HumanWatchTimer;
+	float HumanOffLigthTimer;
 };

@@ -17,9 +17,12 @@ enum class EDogState : uint8
 	Chase UMETA(DisplayName = "Chase"),
 	Barking UMETA(DisplayName = "Barking"),
 	Alert UMETA(DisplayName = "Alert"),
+	Punished UMETA(DisplayName = "Punished"),
 	ReturnToDoghouse UMETA(DisplayName = "Return to Doghouse"),
 	Deactivated UMETA(DisplayName = "Deactivated")
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBarkingState, bool, IsBarking);
 
 UCLASS()
 class DOG_2D_API ANpcDogPawn : public ABaseDogPawn
@@ -31,6 +34,9 @@ public:
 	ANpcDogPawn();
 
 	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(BlueprintAssignable, Category = "Dog_AI")
+	FOnBarkingState OnBarkingState;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Dog_AI")
 	EDogState CurrentState;
@@ -56,9 +62,18 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "BarkVisual")
 	void OnStopBarkingVisual();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "PunishedVisual")
+	void OnPunishedVisual();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "PunishedVisual")
+	void OnStopPunishedVisual();
+
 	FVector DoghouseLocation;
 
 	float GetBarkingTimer() const { return BarkingTimer; }
+	EDogState GetCurrentState() const { return CurrentState; }
+
+	void TransitionToPunished();
 
 protected:
 
@@ -79,6 +94,7 @@ protected:
 	void TransitionToAlert();
 	void TransitionToBarking();
 	void TransitionToChase();
+	
 
 	void ReturnToHome();
 
@@ -98,6 +114,7 @@ protected:
 	bool bCanTakeItem;
 	bool PlayerFounded;
 	bool IsBarkingVisual;
+	bool IsPunishedVisual;
 
 	float HomeX;
 	float AlertTimer;
