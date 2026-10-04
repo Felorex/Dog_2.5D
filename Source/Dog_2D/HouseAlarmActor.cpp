@@ -60,7 +60,7 @@ void AHouseAlarmActor::LightIsOn(float DeltaTime)
 
 bool AHouseAlarmActor::CanHumanWatch()
 {
-	if (InsideLightTimer >= 3.f && TargetDog && TargetDog->GetCurrentState() == EDogState::Barking)
+	if (InsideLightTimer >= 3.f && TargetDog && DogIsBarking)
 	{
 		return true;
 	}
@@ -68,7 +68,7 @@ bool AHouseAlarmActor::CanHumanWatch()
 }
 bool AHouseAlarmActor::CanLightOffBeforeHuman()
 {
-	if (TargetDog && TargetDog->GetCurrentState() != EDogState::Barking)
+	if (TargetDog && !DogIsBarking)
 	{
 		return true;
 	}
@@ -109,7 +109,7 @@ bool AHouseAlarmActor::CanHumanLeft()
 {
 	if (!IsHumanInWindow) return false;
 
-	if (HumanWatchTimer >= 2.f && TargetDog->GetCurrentState() != EDogState::Barking)
+	if (HumanWatchTimer >= 2.f && TargetDog && !DogIsBarking)
 	{
 		return true;
 	}
@@ -117,7 +117,7 @@ bool AHouseAlarmActor::CanHumanLeft()
 }
 bool AHouseAlarmActor::CanDogPunished()
 {
-	if (IsHumanInWindow && TargetDog && TargetDog->GetCurrentState() == EDogState::Barking)
+	if (IsHumanInWindow && TargetDog && DogIsBarking)
 	{
 		return true;
 	}
@@ -142,7 +142,7 @@ void AHouseAlarmActor::HumanLeftWindow(float DeltaTime)
 bool AHouseAlarmActor::CanLightOff()
 {
 	if (!IsLightActive) return false;
-	if (HumanOffLigthTimer >= 2.f && TargetDog->GetCurrentState() != EDogState::Barking)
+	if (HumanOffLigthTimer >= 2.f && TargetDog && !DogIsBarking)
 	{
 		return true;
 	}
@@ -178,7 +178,7 @@ void AHouseAlarmActor::TransitionToHouseSleep()
 
 bool AHouseAlarmActor::DogAgainBarking()
 {
-	if (IsLightActive && TargetDog && TargetDog->GetCurrentState() == EDogState::Barking)
+	if (IsLightActive && TargetDog && DogIsBarking)
 	{
 		return true;
 	}
@@ -187,6 +187,8 @@ bool AHouseAlarmActor::DogAgainBarking()
 
 void AHouseAlarmActor::HandleDogBarkingState(bool IsBarking)
 {
+	DogIsBarking = IsBarking;
+
 	if (IsBarking)
 	{
 		SetActorTickEnabled(true);

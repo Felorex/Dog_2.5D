@@ -71,7 +71,6 @@ public:
 	FVector DoghouseLocation;
 
 	float GetBarkingTimer() const { return BarkingTimer; }
-	EDogState GetCurrentState() const { return CurrentState; }
 
 	void TransitionToPunished();
 

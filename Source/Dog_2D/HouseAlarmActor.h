@@ -90,6 +90,8 @@ protected:
 
 	bool IsLightActive;
 	bool IsHumanInWindow;
+
+	bool DogIsBarking;
 	
 	float InsideLightTimer;
 	float HumanWatchTimer;
