@@ -2,6 +2,7 @@
 
 
 #include "NpcDogPawn.h"
+#include "ItemBone.h"
 #include "DogPawn.h"
 #include "kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
@@ -107,7 +108,7 @@ void ANpcDogPawn::CanComeBackHome()
 
 void ANpcDogPawn::CanInteractWithObjects()
 {
-	Super::CanInteractWithObjects();
+	ABaseDogPawn::CanInteractWithObjects();
 
 	if (Bone && !IsAtLeashEdge())
 	{
@@ -350,7 +351,7 @@ void ANpcDogPawn::Biting()
 
 void ANpcDogPawn::BeginPlay()
 {
-	Super::BeginPlay();
+	ABaseDogPawn::BeginPlay();
 
 	HomeX = GetActorLocation().X;
 
@@ -358,7 +359,7 @@ void ANpcDogPawn::BeginPlay()
 
 void ANpcDogPawn::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	ABaseDogPawn::Tick(DeltaTime);
 
 	switch (CurrentState)	
 	{

@@ -7,20 +7,22 @@
 #include "Components/BoxComponent.h"
 
 #include "BaseDogPawn.h"
-#include "ItemBone.h"
+#include "StealthCover.h"
 
-#include "DogPawn.generated.h"
+#include "DogPawn.generated.h"    
 
-
+class AHouseAlarmActor;
 
 UCLASS()
-class DOG_2D_API ADogPawn : public ABaseDogPawn
+class DOG_2D_API ADogPawn : public ABaseDogPawn, public IStealthCoverInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
 	ADogPawn();	
+
+	virtual void SetCurrentCover(class AStealthCover* NewCover) override;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -56,9 +58,12 @@ public:
 	void SetMoveDirection(float Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scary_Event")
-	AActor* SafeZone;
+	AActor* StopScaryEventZone;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Safe_Zone")
+	AStealthCover* StealthCover;
 
-	void ScaredRun();
+	void ScaredRun(float DeltaTime);
 
 	void SetIsScared(bool NewIsScared);
 
@@ -66,9 +71,10 @@ public:
 
 	float GetVelocityX() const { return VelocityX; }
 	float GetHeadEdgeX() const;
+	float GetContainerForward() const;
+
 	bool GetIsPulling() const { return bIsPulling; }
 	bool GetIsPushing() const { return bIsPushing; }
-	float GetContainerForward() const;
 
 protected:
 
@@ -78,12 +84,23 @@ protected:
 	
 	virtual void CanInteractWithObjects() override;
 
+
+	UFUNCTION()
+	void HandleHouseIsLightingState(bool bIsLighting);
+
+	UPROPERTY()
+	USceneComponent* CameraComp;
+
 	void InteractMovementX();
 	float CalculateAlignmentDeltaX() const;
 	bool PreCheckAlignmentSpace();
 
-	USceneComponent* CameraComp;
-		
+	void HideInCover(float DeltaTime);
+	bool CanHideInCover() const;
+
+	bool HouseIsLightingUp;
+	bool IsInCover;
+
 	bool bIsPushing;
 	bool bIsPulling;
 

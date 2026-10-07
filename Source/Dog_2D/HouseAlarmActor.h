@@ -22,6 +22,7 @@ enum class EHouseState : uint8
 	LightOff UMETA(DisplayName = "Light Off")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHouseStateChange, bool, bIsLighting);
 
 UCLASS()
 class DOG_2D_API AHouseAlarmActor : public AActor
@@ -34,11 +35,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(BlueprintAssignable, Category = "House State")
+	FOnHouseStateChange OnHouseStateChange;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Connection")
 	ANpcDogPawn* TargetDog;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House State")
-	EHouseState CurrentHouseState;
 
 protected:
 	// Called when the game starts or when spawned
@@ -56,11 +57,15 @@ protected:
 	UPROPERTY()
 	UBoxComponent* LightZoneCollision;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House State")
+	EHouseState CurrentHouseState;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
 	UMaterialInterface* LightOnMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
 	UMaterialInterface* LightOffMaterial;
+
 
 	void TransitionToHouseWokeUp();
 	void TransitionToLightOn();

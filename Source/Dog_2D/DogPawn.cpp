@@ -3,7 +3,11 @@
 
 #include "DogPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "InteractiveBox.h"
+#include "HouseAlarmActor.h"
+
+
 
 // Sets default values
 ADogPawn::ADogPawn()
@@ -17,6 +21,9 @@ ADogPawn::ADogPawn()
 
 	IsScared = false;
 	ScarySpeed = 400.f;
+
+	StealthCover = nullptr;
+	IsInCover = false;
 }
 
 void ADogPawn::Move(float Value)
@@ -32,7 +39,7 @@ void ADogPawn::Move(float Value)
 	}
 	else
 	{
-		Super::Move(Value);
+		ABaseDogPawn::Move(Value);
 	}	
 }
 void ADogPawn::StopMove()
@@ -135,12 +142,12 @@ void ADogPawn::DoJump()
 {
 	if (bIsInteracting) return;
 
-	Super::DoJump();
+	ABaseDogPawn::DoJump();
 }
 
 void ADogPawn::UpdatePositionY(float DeltaTime)
 {
-	if (!CollisionHead || !CollisionBody) return;
+	if (!CollisionHead || !CollisionBody  || IsInCover) return;
 
 	if ((IsJumping || (IsGrounded && !bIsInteracting)) && Box)
 	{
@@ -179,7 +186,7 @@ void ADogPawn::CanInteractWithObjects()
 {
 	if (bIsInteracting) return;
 
-	Super::CanInteractWithObjects();
+	ABaseDogPawn::CanInteractWithObjects();
 
 	if (InteractHitResult.IsValidBlockingHit() && InteractHitResult.GetActor())
 	{
@@ -286,7 +293,7 @@ void ADogPawn::OnCrouchPressed()
 {
 	if (bIsInteracting) return;
 
-	Super::OnCrouchPressed();
+	ABaseDogPawn::OnCrouchPressed();
 }
 
 float ADogPawn::GetHeadEdgeX() const
@@ -324,12 +331,12 @@ bool ADogPawn::GetIsScared() const
 {
 	return IsScared;
 }
-void ADogPawn::ScaredRun()
+void ADogPawn::ScaredRun(float DeltaTime)
 {
-	if (!SafeZone || !IsScared) return;
+	if (!StopScaryEventZone || !IsScared) return;
 
 	float DogX = GetActorLocation().X;
-	float SafeX = SafeZone->GetActorLocation().X;
+	float SafeX = StopScaryEventZone->GetActorLocation().X;
 
 	float Direction = (DogX > SafeX) ? -1.f : 1.f;
 
@@ -338,12 +345,12 @@ void ADogPawn::ScaredRun()
 	if (Direction > 0)
 	{
 		OnLookRightVisual();
-		DeltaX = ScarySpeed * GetWorld()->GetDeltaSeconds();
+		DeltaX = ScarySpeed * DeltaTime;
 	}
 	else
 	{
 		OnLookLeftVisual();
-		DeltaX = -ScarySpeed * GetWorld()->GetDeltaSeconds();
+		DeltaX = -ScarySpeed * DeltaTime;
 	}
 	
 	float DistanceToSafe = FMath::Abs(SafeX - DogX);
@@ -361,18 +368,90 @@ void ADogPawn::ScaredRun()
 	AddActorWorldOffset(DeltaLocation, true);
 }
 
+void ADogPawn::HandleHouseIsLightingState(bool bIsLighting)
+{
+	HouseIsLightingUp = bIsLighting;
+}
+
+void ADogPawn::HideInCover(float DeltaTime)
+{
+	if (CanHideInCover())
+	{
+		IsInCover = true;
+		TargetY = StealthCover->GetCoverZoneY();
+		
+	}
+	else
+	{
+		TargetY = OriginalY;
+
+		if (FMath::Abs(GetActorLocation().Y - OriginalY) < 1.f)
+		{
+			IsInCover = false;
+		}
+	}
+
+	if (IsInCover || FMath::Abs(GetActorLocation().Y - OriginalY) > 0.1f)
+	{
+		FVector CurrentLocation = GetActorLocation();
+		float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
+		float DeltaY = NewY - CurrentLocation.Y;
+
+		AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+	}
+}
+bool ADogPawn::CanHideInCover() const
+{
+	if (!IsInCover)
+	{
+		return HouseIsLightingUp && StealthCover && bWantToCrouch;
+	}
+	return StealthCover && bWantToCrouch;
+}
+
+void ADogPawn::SetCurrentCover(AStealthCover* NewCover)
+{
+	StealthCover = NewCover;	
+}
+
+
 // Called when the game starts or when spawned
 void ADogPawn::BeginPlay()
 {
-	Super::BeginPlay();
+	ABaseDogPawn::BeginPlay();
 
-	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));		
+	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
+
+	AActor* FoundHouseActor = UGameplayStatics::GetActorOfClass(GetWorld(), AHouseAlarmActor::StaticClass());
+	if (FoundHouseActor)
+	{
+		AHouseAlarmActor* House = Cast<AHouseAlarmActor>(FoundHouseActor);
+		if (House)
+		{
+			House->OnHouseStateChange.AddDynamic(this, &ADogPawn::HandleHouseIsLightingState);
+		}
+	}
 }
 
 // Called every frame
 void ADogPawn::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	ABaseDogPawn::Tick(DeltaTime);
+
+	if (GEngine) 
+	{ 
+		// Каждый кадр очищаем старый текст (используем фиксированные ID от 1 до 7, чтобы строчки не спамили, а обновлялись на месте) 
+		GEngine->AddOnScreenDebugMessage(1, 0.01f, FColor::Yellow, FString::Printf(TEXT("1. СВЕТ (HouseIsLightingUp): %s"), HouseIsLightingUp ? TEXT("ДА") : TEXT("НЕТ"))); 
+		GEngine->AddOnScreenDebugMessage(2, 0.01f, FColor::Yellow, FString::Printf(TEXT("2. КУСТ (StealthCover под лапами): %s"), StealthCover != nullptr ? TEXT("ЕСТЬ") : TEXT("НЕТ"))); 
+		GEngine->AddOnScreenDebugMessage(3, 0.01f, FColor::Yellow, FString::Printf(TEXT("3. НАЖАТ ПРИСЕД (bWantToCrouch): %s"), bWantToCrouch ? TEXT("ДА") : TEXT("НЕТ"))); 
+		GEngine->AddOnScreenDebugMessage(4, 0.01f, FColor::Yellow, FString::Printf(TEXT("4. ФИЗИЧЕСКИ СЕЛА (IsCrouching): %s"), IsCrouching ? TEXT("ДА") : TEXT("НЕТ"))); 
+		GEngine->AddOnScreenDebugMessage(5, 0.01f, FColor::Orange, FString::Printf(TEXT("5. РЕЖИМ ПРЯТОК (IsInCover): %s"), IsInCover ? TEXT("АКТИВЕН") : TEXT("ВЫКЛЮЧЕН"))); 
+		// Выводим координаты 
+		float CurrentY = GetActorLocation().Y; 
+		float CoverY= StealthCover ? StealthCover->GetCoverZoneY() : 0.0f; 
+		GEngine->AddOnScreenDebugMessage(6, 0.01f, FColor::Cyan, FString::Printf(TEXT("6. СЛЕДУЮЩИЙ TARGET Y: %.2f (OriginalY: %.2f, Куст Y: %.2f)"), TargetY, OriginalY, CoverY)); 
+		GEngine->AddOnScreenDebugMessage(7, 0.01f, FColor::Green, FString::Printf(TEXT("7. ТЕКУЩИЙ Y СОБАКИ: %.2f"), CurrentY)); 
+	}
 
 	if (CameraComp)
 	{
@@ -386,6 +465,8 @@ void ADogPawn::Tick(float DeltaTime)
 		CheckJumpExecution();
 	}
 	
+	HideInCover(DeltaTime);
+
 	if (!bWantToCrouch && IsCrouching)
 	{
 		TryStandUp();
@@ -393,7 +474,7 @@ void ADogPawn::Tick(float DeltaTime)
 
 	if (IsScared)
 	{
-		ScaredRun();
+		ScaredRun(DeltaTime);
 	}
 }
 

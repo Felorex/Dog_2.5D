@@ -48,7 +48,11 @@ void AHouseAlarmActor::TransitionToLightOn()
 }
 void AHouseAlarmActor::LightIsOn(float DeltaTime)
 {
-	IsLightActive = true;
+	if (!IsLightActive)
+	{
+		IsLightActive = true;
+		OnHouseStateChange.Broadcast(true);
+	}
 
 	InsideLightTimer += DeltaTime;
 
@@ -56,6 +60,10 @@ void AHouseAlarmActor::LightIsOn(float DeltaTime)
 	{
 		WindowMesh->SetMaterial(0, LightOnMaterial);
 	}
+	if (LightZoneCollision)
+	{
+		LightZoneCollision->SetHiddenInGame(false);
+	}	
 }
 
 bool AHouseAlarmActor::CanHumanWatch()
@@ -154,12 +162,20 @@ void AHouseAlarmActor::TransitionToLightOff()
 }
 void AHouseAlarmActor::LightIsOff()
 {
-	IsLightActive = false;
+	if (IsLightActive)
+	{
+		IsLightActive = false;
+		OnHouseStateChange.Broadcast(false);
+	}
 
 	if (WindowMesh && LightOffMaterial)
 	{
 		WindowMesh->SetMaterial(0, LightOffMaterial);
 	}
+	if (LightZoneCollision)
+	{
+		LightZoneCollision->SetHiddenInGame(true);
+	}	
 }
 
 bool AHouseAlarmActor::CanHouseSleep()
@@ -219,6 +235,10 @@ void AHouseAlarmActor::BeginPlay()
 	if (WindowMesh && LightOffMaterial)
 	{
 		WindowMesh->SetMaterial(0, LightOffMaterial);
+	}
+	if (LightZoneCollision)
+	{
+		LightZoneCollision->SetHiddenInGame(true);
 	}
 }
 
