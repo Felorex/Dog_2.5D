@@ -66,7 +66,7 @@ Using these channels, the base class runs a focused `BoxTraceMulti` (X=30, Y=30,
 \* Hierarchical Socket Component Binding: Created a dedicated `USceneComponent` (`MouthAttachPoint`) attached directly to the dog's head collision. Items are dynamically nested into this component using `FAttachmentTransformRules::SnapToTarget`, allowing the item mesh to automatically mirror head movements.
 \* Sub-Millimeter Floating-Point Synchronization Fix: Fixed a critical bug where physics-based interaction with heavy boxes would seize or stutter due to timeline rounding errors (returning Z=0.0 or a sign-flipped -0 value instead of the factory default Z=0.6). Adjusting the timeline's baseline targets to a rigid 0.6 value successfully eliminated collision desynchronization.
 
-\### 2D NPC Dog AI System (`ANpcDogPawn`)
+\### 7. 2D NPC Dog AI System (`ANpcDogPawn`)
 
 Technical documentation for a robust, highly optimized, and scalable Finite State Machine (FSM) governing a guard dog NPC in a 2D platformer game built with Unreal Engine. The system is designed using clean state isolation and strict transition triggers to completely prevent frame-by-frame event flooding inside the `Tick` loop.
 
@@ -124,8 +124,28 @@ Invokes` TransitionToRepose()`, flushing player-tracking flags out of active mem
 \** Bone Distraction Return Flow: 
 Invokes `TransitionToDeactivated()`, permanently locking the NPC into its restful slumber posture with the attached item mesh fixed in place.
 
+\### 8. House Alarm System & Dynamic Punishment Loop
+
+The environmental hazard loop is driven by `AHouseAlarmActor`, which operates an optimized state machine (`EHouseState`) to manage stealth detection, window illumination, and AI interaction via a single-frame pulse delegate framework:
+
+\** Pulse Event Delegate Architecture: 
+The window illumination system distributes global lighting states via the `OnHouseStateChange` dynamic multicast delegate. To completely eliminate frame-rate high-frequency call-stack spamming, the logic is protected by an internal `IsLightActive` gate. The `Broadcast(true / false)` pulse fires exactly once upon transition. The player character handles subscription safely inside `BeginPlay()` via `UGameplayStatics::GetActorOfClass`, freeing the frame loop from continuous polling.
+\** The Noise-Triggered Punishment Mechanic: 
+The house actor actively monitors the environment for noise signals from the guard dog. If the NPC dog remains in `EDogState::Barking` at the max leash edge for too long, an internal `InsideLightTimer` triggers the human to look through the window (`EHouseState::HumanWatching`). If the dog continues barking under the window, the state machine branches directly into `EHouseState::DogPunished`, triggering `DogGetPunished()`. This forces the NPC dog out of aggression and immediately routes it back to its booth via `TransitionToPunished()`, creating a dynamic tactical window for the player.
+\** Advanced 2.5D Collision Zoning: 
+The system utilizes custom collision filtering profiles to segment physical traversal from stealth logic. The system introduces dedicated interaction channels to isolate standard platform physics from overlapping stealth sensors (`CoverZone`), completely preventing trace interference during high-frequency checks.
+
+\### 9. Autonomous 2.5D Stealth Cover System
+
+The framework implements a standalone stealth hiding mechanic engineered around the Separation of Concerns (SoC) principle, completely isolated from frame-rate dependencies or structural physics breakdowns:
+
+\** Isolated Depth Interception Channel: 
+The depth-axis hiding mechanics are entirely contained within the localized sub-function `HideInCover(float DeltaTime)`. When the player registers a crouch command inside a valid `StealthCover` trigger volume, this sequence intercepts transform management and smoothly interpolates the character coordinates to the target axis (`TargetY`). Concurrently, the legacy interactive box tracking method `UpdatePositionY` is immediately truncated on its very first evaluation line via the active `IsInCover` check, freeing up critical CPU resources.
+\** Precise Alignment Calibration (Anti-Drift `IsGrounded` Fix): 
+To prevent the character from physically penetrating the cover asset's collision volume—which previously caused an immediate grounding failure (`IsGrounded = false`), runaway gravity accumulation (`VelocityZ`), and a locked input stack—the framework dynamically factors in the sub-centimeter half-width extent of the precise mesh collision boundary along the Y-axis: `TargetY = StealthCover->GetCoverZoneY() + GetBodyEdgeY()`; 
+The character centers halt perfectly flush against the asset, bringing its outermost physical wall into direct contact with the cover edge without penetrating the non-physical overlap trigger, keeping the structural ground state stable and movement arrays completely live.
 
 \## Future Development Roadmap
 
-\* Edge-of-Leash Tantrum Logic: Enhance the bone interception rule so that if a bone lands just beyond the hard-coded leash boundary (`IsAtLeashEdge()`), the dog transitions into a high-aggression bark cycle, dynamically locked from reaching the item while creating a tense environmental puzzle for the player.
-\* Vertical Platform Constraints (Box Checking): Expand the state logic to evaluate the player's location along the Z-axis, enabling the dog to stop right beneath platforms/crates, keeping the target cornered from below while continuously barking.
+\** The Catch and Level Hard-Reset: When the player is caught under the active light zone (`EHouseState::PlayerCaught`), the game triggers a level hard-reset. Currently, a catch immediately invokes a full scene reload, wiping active memory and returning the player character back to the initial starting location of the first map zone.
+\** Progressive Punishment & Multi-Tier Checkpoint System: Expand the current level reload logic into a persistent, multi-tiered checkpoint system. Instead of resetting progress back to the very first zone upon capture, the system will store verified environmental milestones. Getting caught will trigger a soft-respawn at the last activated checkpoint, combined with a progressive punishment index that scales the AI guard dog's future awareness and shortens the house alarm triggers upon consecutive failures.

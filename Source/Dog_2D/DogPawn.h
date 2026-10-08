@@ -98,6 +98,8 @@ protected:
 	void HideInCover(float DeltaTime);
 	bool CanHideInCover() const;
 
+	float GetBodyEdgeY() const;
+
 	bool HouseIsLightingUp;
 	bool IsInCover;
 

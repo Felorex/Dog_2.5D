@@ -304,6 +304,13 @@ float ADogPawn::GetHeadEdgeX() const
 	return CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);
 }
 
+float ADogPawn::GetBodyEdgeY() const
+{
+	if (!CollisionBody) return GetActorLocation().Y;
+
+	return CollisionBody->GetScaledBoxExtent().Y;
+}
+
 float ADogPawn::GetContainerForward() const
 {
 	if (!Conteiner) return 1.f;
@@ -378,7 +385,7 @@ void ADogPawn::HideInCover(float DeltaTime)
 	if (CanHideInCover())
 	{
 		IsInCover = true;
-		TargetY = StealthCover->GetCoverZoneY();
+		TargetY = StealthCover->GetCoverZoneY() + GetBodyEdgeY();
 		
 	}
 	else
@@ -437,21 +444,6 @@ void ADogPawn::BeginPlay()
 void ADogPawn::Tick(float DeltaTime)
 {
 	ABaseDogPawn::Tick(DeltaTime);
-
-	if (GEngine) 
-	{ 
-		// Каждый кадр очищаем старый текст (используем фиксированные ID от 1 до 7, чтобы строчки не спамили, а обновлялись на месте) 
-		GEngine->AddOnScreenDebugMessage(1, 0.01f, FColor::Yellow, FString::Printf(TEXT("1. СВЕТ (HouseIsLightingUp): %s"), HouseIsLightingUp ? TEXT("ДА") : TEXT("НЕТ"))); 
-		GEngine->AddOnScreenDebugMessage(2, 0.01f, FColor::Yellow, FString::Printf(TEXT("2. КУСТ (StealthCover под лапами): %s"), StealthCover != nullptr ? TEXT("ЕСТЬ") : TEXT("НЕТ"))); 
-		GEngine->AddOnScreenDebugMessage(3, 0.01f, FColor::Yellow, FString::Printf(TEXT("3. НАЖАТ ПРИСЕД (bWantToCrouch): %s"), bWantToCrouch ? TEXT("ДА") : TEXT("НЕТ"))); 
-		GEngine->AddOnScreenDebugMessage(4, 0.01f, FColor::Yellow, FString::Printf(TEXT("4. ФИЗИЧЕСКИ СЕЛА (IsCrouching): %s"), IsCrouching ? TEXT("ДА") : TEXT("НЕТ"))); 
-		GEngine->AddOnScreenDebugMessage(5, 0.01f, FColor::Orange, FString::Printf(TEXT("5. РЕЖИМ ПРЯТОК (IsInCover): %s"), IsInCover ? TEXT("АКТИВЕН") : TEXT("ВЫКЛЮЧЕН"))); 
-		// Выводим координаты 
-		float CurrentY = GetActorLocation().Y; 
-		float CoverY= StealthCover ? StealthCover->GetCoverZoneY() : 0.0f; 
-		GEngine->AddOnScreenDebugMessage(6, 0.01f, FColor::Cyan, FString::Printf(TEXT("6. СЛЕДУЮЩИЙ TARGET Y: %.2f (OriginalY: %.2f, Куст Y: %.2f)"), TargetY, OriginalY, CoverY)); 
-		GEngine->AddOnScreenDebugMessage(7, 0.01f, FColor::Green, FString::Printf(TEXT("7. ТЕКУЩИЙ Y СОБАКИ: %.2f"), CurrentY)); 
-	}
 
 	if (CameraComp)
 	{
