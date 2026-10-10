@@ -42,8 +42,8 @@ protected:
 	UPROPERTY()
 	ADogPawn* Player;
 
-	UPROPERTY()
-	UPrimitiveComponent* BoxComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* BoxComponent;
 
 	bool bIsFollowing;
 	bool IsBoxBlocked;

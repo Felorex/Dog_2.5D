@@ -107,7 +107,7 @@ void ADogPawn::SetMoveDirection(float Value)
 	bool WasPushing = bIsPushing;
 	bool WasPulling = bIsPulling;
 
-	float LookDirection = FMath::Sign(Conteiner->GetForwardVector().X);
+	float LookDirection = FMath::Sign(VisualContainer->GetForwardVector().X);
 	float InputDirection = FMath::Sign(Value);
 
 	float RelativeDirection = LookDirection * InputDirection;
@@ -241,7 +241,7 @@ float ADogPawn::CalculateAlignmentDeltaX() const
 {
 	if (!Box || !CollisionHead) return 0.f;
 
-	float DogDirection = FMath::Sign(Conteiner->GetForwardVector().X);
+	float DogDirection = FMath::Sign(VisualContainer->GetForwardVector().X);
 
 	float BoxWall = (DogDirection > 0.f) ? Box->GetBoxLeftEdgeX() :
 		Box->GetBoxRightEdgeX();
@@ -298,9 +298,9 @@ void ADogPawn::OnCrouchPressed()
 
 float ADogPawn::GetHeadEdgeX() const
 {
-	if (!Conteiner || !CollisionHead) return GetActorLocation().X;
+	if (!VisualContainer || !CollisionHead) return GetActorLocation().X;
 
-	float Direction = FMath::Sign(Conteiner->GetForwardVector().X);
+	float Direction = FMath::Sign(VisualContainer->GetForwardVector().X);
 	return CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);
 }
 
@@ -313,8 +313,8 @@ float ADogPawn::GetBodyEdgeY() const
 
 float ADogPawn::GetContainerForward() const
 {
-	if (!Conteiner) return 1.f;
-	return FMath::Sign(Conteiner->GetForwardVector().X);
+	if (!VisualContainer) return 1.f;
+	return FMath::Sign(VisualContainer->GetForwardVector().X);
 }
 
 void ADogPawn::SetIsScared(bool NewIsScared)

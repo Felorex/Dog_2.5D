@@ -12,6 +12,36 @@ ABaseDogPawn::ABaseDogPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	CollisionBody = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBody"));
+	if (CollisionBody)
+	{
+		RootComponent = CollisionBody;
+	}
+
+	VisualContainer = CreateDefaultSubobject<USceneComponent>(TEXT("VisualContainer"));
+	if (CollisionBody && VisualContainer)
+	{
+		VisualContainer->SetupAttachment(CollisionBody);
+	}
+
+	CollisionHead = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionHead"));
+	if (VisualContainer && CollisionHead)
+	{
+		CollisionHead->SetupAttachment(VisualContainer);
+	}
+
+	Head = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Head"));
+	if (CollisionHead && Head)
+	{
+		Head->SetupAttachment(CollisionHead);
+	}
+	
+	MouthComp = CreateDefaultSubobject<USceneComponent>(TEXT("MouthAttachPoint"));
+	if (MouthComp && Head)
+	{
+		MouthComp->SetupAttachment(Head);
+	}
+
 	Gravity = -980.0f;
 	VelocityZ = 0.0f;
 	VelocityX = 0.0f;
@@ -31,11 +61,6 @@ ABaseDogPawn::ABaseDogPawn()
 
 	Box = nullptr;
 	Bone = nullptr;
-
-	CollisionBody = nullptr;
-	CollisionHead = nullptr;
-	Conteiner = nullptr;
-	MouthComp = nullptr;
 }
 
 void ABaseDogPawn::Move(float Value)
@@ -77,6 +102,8 @@ void ABaseDogPawn::Move(float Value)
 }
 bool ABaseDogPawn::CanMoveWithHead(float DeltaX)
 {
+	if (!CollisionHead) return false;
+
 	FVector Start = CollisionHead->GetComponentLocation();
 	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
 	FRotator Rotation = CollisionHead->GetComponentRotation();
@@ -206,7 +233,7 @@ void ABaseDogPawn::TryStandUp()
 }
 bool ABaseDogPawn::CanStandUp()
 {
-	if (!IsCrouching) return true;
+	if (!IsCrouching || !CollisionBody || !CollisionHead) return true;
 
 	FVector HeadLocation = CollisionHead->GetComponentLocation();
 	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
@@ -272,16 +299,18 @@ bool ABaseDogPawn::CanStandUp()
 
 void ABaseDogPawn::CanInteractWithObjects()
 {
+	if (!CollisionBody || !CollisionHead) return;
+
 	if (IsCrouching || IsJumping || bIsTakingItem) return;
 
 	FVector LookDirection = GetActorForwardVector();
 	FRotator TraceRotation = GetActorRotation();
 
 
-	if (Conteiner)
+	if (VisualContainer)
 	{
-		LookDirection = Conteiner->GetForwardVector();
-		TraceRotation = Conteiner->GetComponentRotation();
+		LookDirection = VisualContainer->GetForwardVector();
+		TraceRotation = VisualContainer->GetComponentRotation();
 	}
 
 	FVector StartLocation = GetActorLocation();
@@ -378,7 +407,7 @@ void ABaseDogPawn::AttachItemToMouth()
 
 	FAttachmentTransformRules AttachRules(
 		EAttachmentRule::SnapToTarget,
-		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::KeepWorld,
 		EAttachmentRule::KeepWorld,
 		false
 	);
@@ -610,19 +639,50 @@ void ABaseDogPawn::Depenetration()
 	}
 }
 
+void ABaseDogPawn::DepenetrationBodyZ()
+{
+	if (!CollisionBody) return;
+
+	FVector BodyLoc = CollisionBody->GetComponentLocation();
+	FVector BodyExtent = CollisionBody->GetScaledBoxExtent();
+	FQuat Rotation = CollisionBody->GetComponentQuat();
+	FHitResult Result;
+
+	bool Overlap = GetWorld()->SweepSingleByChannel(
+		Result,
+		BodyLoc,
+		BodyLoc,
+		Rotation,
+		ECC_WorldStatic,
+		FCollisionShape::MakeBox(BodyExtent),
+		FCollisionQueryParams::DefaultQueryParam
+	);
+
+	if (Overlap && Result.bStartPenetrating)
+	{
+		FVector DepenetrationVector = Result.Normal * (Result.PenetrationDepth + 1.f);
+
+		DepenetrationVector.X = 0.f;
+		DepenetrationVector.Y = 0.f;
+
+		if (DepenetrationVector.Z < 0.f)
+		{
+			DepenetrationVector *= -1.f;
+		}
+
+		AddActorWorldOffset(DepenetrationVector, false);
+	}
+}
 
 // Called when the game starts or when spawned
 void ABaseDogPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	Conteiner = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("VisualConteiner")));
-	MouthComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("MouthAttachPoint")));
-	CollisionBody = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("BodyCollision")));
-	CollisionHead = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("HeadCollision")));
-
 	OriginalY = GetActorLocation().Y;
 	TargetY = OriginalY;
+
+	DepenetrationBodyZ();
 
 	if (CollisionBody && CollisionHead)
 	{

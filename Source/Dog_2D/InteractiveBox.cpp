@@ -12,6 +12,11 @@ AInteractiveBox::AInteractiveBox()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	BoxComponent = CreateDefaultSubobject<UStaticMeshComponent>("BoxComponent");
+	if (BoxComponent)
+	{
+		RootComponent = BoxComponent;
+	}
 	Player = nullptr;
 	bIsFollowing = false;
 	IsBoxBlocked = false;
@@ -191,8 +196,6 @@ void AInteractiveBox::StopFollow()
 void AInteractiveBox::BeginPlay()
 {
 	Super::BeginPlay();
-
-	BoxComponent = Cast<UPrimitiveComponent>(GetRootComponent());
 }
 
 

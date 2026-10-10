@@ -32,8 +32,8 @@ protected:
 	bool IsOnGround();
 	void UpdatePhysics(float DeltaTime);
 
-	UPROPERTY()
-	UPrimitiveComponent* BoneComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* BoneComponent;
 
 	UPROPERTY()
 	ABaseDogPawn* Base;

@@ -75,7 +75,7 @@ void ANpcDogPawn::CheckBoneInsideTerritory()
 {
 	if (!Bone) return;
 
-	float Direction = FMath::Sign(Conteiner->GetForwardVector().X);
+	float Direction = FMath::Sign(VisualContainer->GetForwardVector().X);
 	float BoneX = Bone->GetActorLocation().X;
 	float HeadX = CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);		
 	
@@ -355,12 +355,13 @@ void ANpcDogPawn::BeginPlay()
 
 	HomeX = GetActorLocation().X;
 
+
 }
 
 void ANpcDogPawn::Tick(float DeltaTime)
 {
 	ABaseDogPawn::Tick(DeltaTime);
-
+ 
 	switch (CurrentState)	
 	{
 	case EDogState::InitHome:

@@ -15,10 +15,16 @@ AStealthCover::AStealthCover()
 	RootComponent = RootCollision;
 
 	CoverMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	CoverMesh->SetupAttachment(RootComponent);
+	if (CoverMesh && RootCollision)
+	{
+		CoverMesh->SetupAttachment(RootCollision);
+	}
 
 	CoverCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("CoverCollision"));
-	CoverCollision->SetupAttachment(RootComponent);
+	if (CoverCollision && RootCollision)
+	{
+		CoverCollision->SetupAttachment(RootCollision);
+	}
 
 	CoverCollision->SetGenerateOverlapEvents(true);
 

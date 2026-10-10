@@ -48,14 +48,17 @@ protected:
 	UFUNCTION()
 	void HandleDogBarkingState(bool IsBarking);
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* HouseMesh;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* WindowMesh;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* LightZoneCollision;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* ShadowHuman;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House State")
 	EHouseState CurrentHouseState;

@@ -13,11 +13,16 @@ AItemBone::AItemBone()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	BoneComponent = CreateDefaultSubobject<UStaticMeshComponent>("BoneComponent");
+	if (BoneComponent)
+	{
+		RootComponent = BoneComponent;
+	}
+
 	VelocityZ = 0.0f;
 	Gravity = -980.0f;
 
 	Base = nullptr;
-	BoneComponent = nullptr;
 }
 
 bool AItemBone::IsOnGround()
@@ -126,8 +131,6 @@ void AItemBone::EnablePhysics()
 void AItemBone::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	BoneComponent = Cast<UPrimitiveComponent>(GetRootComponent());
 
 	FVector StartLocation = GetActorLocation();
 

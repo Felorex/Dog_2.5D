@@ -13,6 +13,33 @@ AHouseAlarmActor::AHouseAlarmActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	HouseMesh = CreateDefaultSubobject<UStaticMeshComponent>("HouseMesh");
+	if (HouseMesh)
+	{
+		RootComponent = HouseMesh;
+	}
+
+	WindowMesh = CreateDefaultSubobject<UStaticMeshComponent>("WindowMesh");
+	if (HouseMesh && WindowMesh)
+	{
+		WindowMesh->SetupAttachment(HouseMesh);
+	}
+
+	LightZoneCollision = CreateDefaultSubobject<UBoxComponent>("LightZoneCollision");
+	if (WindowMesh && LightZoneCollision)
+	{
+		LightZoneCollision->SetupAttachment(WindowMesh);
+	}
+	
+	ShadowHuman = CreateDefaultSubobject<UStaticMeshComponent>("ShadowHuman");
+	if (WindowMesh && ShadowHuman)
+	{
+		ShadowHuman->SetupAttachment(WindowMesh);
+
+		ShadowHuman->SetHiddenInGame(true);
+		ShadowHuman->SetCastShadow(false);
+	}
+
 	CurrentHouseState = EHouseState::HouseSleep;
 
 	IsLightActive = false;
@@ -68,7 +95,7 @@ void AHouseAlarmActor::LightIsOn(float DeltaTime)
 
 bool AHouseAlarmActor::CanHumanWatch()
 {
-	if (InsideLightTimer >= 3.f && TargetDog && DogIsBarking)
+	if (InsideLightTimer >= 4.f && TargetDog && DogIsBarking)
 	{
 		return true;
 	}
@@ -93,10 +120,7 @@ void AHouseAlarmActor::HumanWatchingInWindow(float DeltaTime)
 	{
 		IsHumanInWindow = true;		
 
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Human is watching in the window!"));
-		}
+		ShadowHuman->SetHiddenInGame(false);
 	}
 	HumanWatchTimer += DeltaTime;
 }
@@ -117,7 +141,7 @@ bool AHouseAlarmActor::CanHumanLeft()
 {
 	if (!IsHumanInWindow) return false;
 
-	if (HumanWatchTimer >= 2.f && TargetDog && !DogIsBarking)
+	if (HumanWatchTimer >= 4.f && TargetDog && !DogIsBarking)
 	{
 		return true;
 	}
@@ -125,7 +149,7 @@ bool AHouseAlarmActor::CanHumanLeft()
 }
 bool AHouseAlarmActor::CanDogPunished()
 {
-	if (IsHumanInWindow && TargetDog && DogIsBarking)
+	if (IsHumanInWindow && HumanWatchTimer >= 4.f && TargetDog && DogIsBarking)
 	{
 		return true;
 	}
@@ -136,10 +160,7 @@ void AHouseAlarmActor::TransitionToHumanLeft()
 	HumanOffLigthTimer = 0.f;
 	IsHumanInWindow = false;
 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Human left the window!"));
-	}
+	ShadowHuman->SetHiddenInGame(true);
 	CurrentHouseState = EHouseState::HumanLeft;
 }
 void AHouseAlarmActor::HumanLeftWindow(float DeltaTime)
@@ -150,7 +171,7 @@ void AHouseAlarmActor::HumanLeftWindow(float DeltaTime)
 bool AHouseAlarmActor::CanLightOff()
 {
 	if (!IsLightActive) return false;
-	if (HumanOffLigthTimer >= 2.f && TargetDog && !DogIsBarking)
+	if (HumanOffLigthTimer >= 3.f && TargetDog && !DogIsBarking)
 	{
 		return true;
 	}
@@ -215,10 +236,6 @@ void AHouseAlarmActor::HandleDogBarkingState(bool IsBarking)
 void AHouseAlarmActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	HouseMesh = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("House")));
-	WindowMesh = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("Window")));
-	LightZoneCollision = Cast<UBoxComponent>(GetDefaultSubobjectByName(TEXT("LightZone")));
 
 	SetActorTickEnabled(false);
 

@@ -92,6 +92,8 @@ protected:
 	void CheckGrounded();
 	void Depenetration();
 	
+	void DepenetrationBodyZ();
+
 	void CheckBoxUnderfoot();
 	void CheckJumpExecution();
 	
@@ -100,14 +102,16 @@ protected:
 
 	bool WantToTakeItem();
 
-	UPROPERTY()
-	USceneComponent* Conteiner;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* VisualContainer;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* MouthComp;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* CollisionBody;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* CollisionHead;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* Head;
 
 	UPROPERTY()
 	AInteractiveBox* Box;
