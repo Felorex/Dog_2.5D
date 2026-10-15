@@ -8,7 +8,13 @@ A highly advanced iteration of my 2D Dog Platformer prototype (https://github.co
 
 
 
-https://github.com/user-attachments/assets/2f6b37c0-545f-4045-ab91-5cec1d7d0d01
+
+
+
+https://github.com/user-attachments/assets/f383db66-469d-4e04-8a78-363f63174d67
+
+
+
 
 
 
