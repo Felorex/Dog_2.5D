@@ -1,0 +1,164 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "ItemBone.h"
+#include "BaseDogPawn.h"
+#include "Components/BoxComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+
+
+// Sets default values
+AItemBone::AItemBone()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	BoneComponent = CreateDefaultSubobject<UStaticMeshComponent>("BoneComponent");
+	if (BoneComponent)
+	{
+		RootComponent = BoneComponent;
+	}
+
+	VelocityZ = 0.0f;
+	Gravity = -980.0f;
+
+	Base = nullptr;
+}
+
+bool AItemBone::IsOnGround()
+{
+	if (!BoneComponent) return false;
+
+	FVector Start = BoneComponent->GetComponentLocation();
+	
+	FVector Origin;
+	FVector BoxExtent;
+	GetActorBounds(false, Origin, BoxExtent);
+	float HalfHeight = BoxExtent.Z;
+
+	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 2.f);
+	FHitResult HitResult;
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+
+	bool bHit = UKismetSystemLibrary::LineTraceSingle(
+		this,
+		Start,
+		End,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		HitResult,
+		true
+	);
+	return bHit && HitResult.IsValidBlockingHit();
+}
+
+void AItemBone::UpdatePhysics(float DeltaTime)
+{
+	// Implementation for physics updates
+	if (!BoneComponent) return;
+
+	if (!IsOnGround())
+	{
+		VelocityZ += Gravity * DeltaTime;
+	}
+	else
+	{
+		VelocityZ = 0.0f;
+		SetActorTickEnabled(false);
+	}	
+}
+
+bool AItemBone::TryTake(ABaseDogPawn* NewBase)
+{
+	if (!BoneComponent|| !NewBase) return false;
+
+	FVector Start = BoneComponent->GetComponentLocation() + FVector(0.0f, 0.0f, 20.f);
+	FVector End = Start + FVector(0.0f, 0.0f, 60.f);
+
+	FHitResult HitResult;
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	ActorsToIgnore.Add(NewBase);
+	
+
+	bool bHit = UKismetSystemLibrary::LineTraceSingle(
+		this,
+		Start,
+		End,
+		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration,
+		HitResult,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		5.0f
+	);
+
+	if (bHit && HitResult.IsValidBlockingHit())
+	{
+		NewBase->ClearItemBone();
+		
+		return false;
+	}
+	return true;
+}
+void AItemBone::DisablePhysics()
+{
+	if (BoneComponent)
+	{
+		BoneComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+void AItemBone::EnablePhysics()
+{
+	if (BoneComponent)
+	{
+		BoneComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		VelocityZ = 0.0f;
+
+		SetActorTickEnabled(true);
+	}
+}
+
+// Called when the game starts or when spawned
+void AItemBone::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FVector StartLocation = GetActorLocation();
+
+	GetWorldTimerManager().SetTimer(GroundCheckTimerHandle, [this, StartLocation]()
+		{
+			if (IsOnGround())
+			{
+				GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
+				return;
+			}
+			SetActorLocation(StartLocation);
+			VelocityZ = 0.0f;
+			SetActorTickEnabled(true);
+
+			GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
+		}, 0.1f, false);
+}
+
+// Called every frame
+void AItemBone::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdatePhysics(DeltaTime);
+
+	float DeltaZ = VelocityZ * DeltaTime;
+	
+	FVector DeltaLocation = FVector(0.0f, 0.0f, DeltaZ);
+	AddActorWorldOffset(DeltaLocation, true);
+}
+

@@ -1,0 +1,478 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "DogPawn.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "InteractiveBox.h"
+#include "HouseAlarmActor.h"
+
+
+
+// Sets default values
+ADogPawn::ADogPawn()
+{
+ 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	bIsInteracting = false;
+	bIsPushing = false;
+	bIsPulling = false;
+
+	IsScared = false;
+	ScarySpeed = 400.f;
+
+	StealthCover = nullptr;
+	IsInCover = false;
+}
+
+void ADogPawn::Move(float Value)
+{
+	if (bIsInteracting)
+	{
+		VelocityX = Value * MoveSpeed;
+
+		SetMoveDirection(Value);
+
+		FVector DeltaLocation(VelocityX * GetWorld()->GetDeltaSeconds(), 0.f, 0.f);
+		AddActorWorldOffset(DeltaLocation, true);
+	}
+	else
+	{
+		ABaseDogPawn::Move(Value);
+	}	
+}
+void ADogPawn::StopMove()
+{
+	VelocityX = 0.0f;
+
+	SetMoveDirection(0.0f);
+}
+bool ADogPawn::CanMoveWithHead(float DeltaX)
+{
+	if (bIsInteracting && Box && bIsPushing && Box->GetIsBoxBlocked()) return false;
+
+	if (bIsInteracting && Box && bIsPulling && Box->GetIsBoxBlocked()) return true;
+
+	FVector Start = CollisionHead->GetComponentLocation();
+	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
+	FRotator Rotation = CollisionHead->GetComponentRotation();
+
+	FVector End = Start;
+	End.X += DeltaX;
+
+	FHitResult HitResult;
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	if (bIsInteracting && Box)
+	{
+		ActorsToIgnore.Add(Box);
+	}
+
+	bool bHit = UKismetSystemLibrary::BoxTraceSingle(
+		this,
+		Start,
+		End,
+		HeadExtent,
+		Rotation,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		//EDrawDebugTrace::ForDuration,
+		HitResult,
+		true
+	);
+
+	if (bHit && HitResult.IsValidBlockingHit())
+	{
+		return false;
+	}
+	return true;
+}
+void ADogPawn::SetMoveDirection(float Value)
+{
+	if (!bIsInteracting || !Box)
+	{
+		if (bIsPulling || bIsPushing)
+		{
+			bIsPushing = false;
+			bIsPulling = false;
+			OnStopInteractVisual();
+		}
+		return;
+	}
+
+	bool WasPushing = bIsPushing;
+	bool WasPulling = bIsPulling;
+
+	float LookDirection = FMath::Sign(VisualContainer->GetForwardVector().X);
+	float InputDirection = FMath::Sign(Value);
+
+	float RelativeDirection = LookDirection * InputDirection;
+
+	if (RelativeDirection > 0.0f)
+	{
+		if (!bIsPushing)
+		{
+			bIsPushing = true;
+			bIsPulling = false;
+			OnPushVisual();
+		}		
+	}
+	else
+	{
+		if (!bIsPulling)
+		{
+			bIsPushing = false;
+			bIsPulling = true;
+			OnPullVisual();
+		}		
+	}
+
+	if (bIsPushing != WasPushing || bIsPulling != WasPulling)
+	{
+		InteractMovementX();
+	}
+}
+
+
+void ADogPawn::DoJump() 
+{
+	if (bIsInteracting) return;
+
+	ABaseDogPawn::DoJump();
+}
+
+void ADogPawn::UpdatePositionY(float DeltaTime)
+{
+	if (!CollisionHead || !CollisionBody  || IsInCover) return;
+
+	if ((IsJumping || (IsGrounded && !bIsInteracting)) && Box)
+	{
+		float BoxTop = Box->GetBoxEdgeZ();
+		float DogBottom = GetBottomZ();
+
+		if ((DogBottom + 5.f) > BoxTop)
+		{
+			TargetY = Box->GetActorLocation().Y;
+		}
+		else
+		{
+			TargetY = OriginalY;
+		}		
+	}
+	else if (bIsInteracting && Box)
+	{
+		float BoxY = Box->GetBoxEdgeY();
+		float DogY = CollisionHead->GetUnscaledBoxExtent().Y;
+		
+		TargetY = DogY + BoxY;
+	}
+	else
+	{
+		TargetY = OriginalY;
+	}
+
+	FVector CurrentLocation = GetActorLocation();
+	float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
+	float DeltaY = NewY - CurrentLocation.Y;
+
+	AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+}
+
+void ADogPawn::CanInteractWithObjects()
+{
+	if (bIsInteracting) return;
+
+	ABaseDogPawn::CanInteractWithObjects();
+
+	if (InteractHitResult.IsValidBlockingHit() && InteractHitResult.GetActor())
+	{
+		AInteractiveBox* FoundBox = Cast<AInteractiveBox>(InteractHitResult.GetActor());
+
+		if (FoundBox)
+		{
+			Box = FoundBox;
+			Bone = nullptr;
+			return;
+		}
+
+		if (Bone)
+		{
+			Box = nullptr;
+			return;
+		}
+	}
+	else 
+	{
+		if (!bIsInteracting) Box = nullptr;
+
+		if (!bIsTakingItem) Bone = nullptr;
+	}
+}
+void ADogPawn::InteractPressed()
+{
+	if (Box)
+	{
+		if (GetActorLocation().Z > Box->GetBoxEdgeZ()) return;
+
+		if (!PreCheckAlignmentSpace()) return;
+
+		bIsInteracting = true;
+		CollisionHead->IgnoreActorWhenMoving(Box, true);
+		Box->StartFollow(this);
+
+		InteractMovementX();
+	}
+}
+void ADogPawn::InteractReleased()
+{
+	if (Box)
+	{
+		bIsInteracting = false;
+		CollisionHead->IgnoreActorWhenMoving(Box, false);
+		Box->StopFollow();
+		OnStopInteractVisual();
+	}
+}
+float ADogPawn::CalculateAlignmentDeltaX() const
+{
+	if (!Box || !CollisionHead) return 0.f;
+
+	float DogDirection = FMath::Sign(VisualContainer->GetForwardVector().X);
+
+	float BoxWall = (DogDirection > 0.f) ? Box->GetBoxLeftEdgeX() :
+		Box->GetBoxRightEdgeX();
+
+	return BoxWall - GetHeadEdgeX();
+}
+bool ADogPawn::PreCheckAlignmentSpace()
+{
+	if (!Box || !CollisionHead) return true;
+
+	float DeltaX = CalculateAlignmentDeltaX();
+
+	if (FMath::IsNearlyEqual(DeltaX, 1.f)) return true;
+
+	FHitResult HitResult;
+
+	AddActorWorldOffset(FVector(DeltaX, 0.f, 0.f), true, &HitResult);
+
+	if (HitResult.IsValidBlockingHit())
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (HitActor && HitActor->IsA(AInteractiveBox::StaticClass()) == false)
+		{
+			float RealMovedDistance = DeltaX * HitResult.Time;
+			AddActorWorldOffset(FVector(-RealMovedDistance, 0.f, 0.f), false);
+			return false;
+		}
+		
+	}
+	AddActorWorldOffset(FVector(-DeltaX, 0.f, 0.f), false);
+	return true;
+}
+void ADogPawn::InteractMovementX()
+{
+	if (!bIsInteracting || !Box || !CollisionHead) return;
+	
+	float DeltaX = CalculateAlignmentDeltaX();
+
+	AddActorWorldOffset(FVector(DeltaX, 0.f, 0.f), false);
+
+}
+void ADogPawn::ForceStopMovement()
+{
+	VelocityX = 0.0f;
+	SetMoveDirection(0.0f);
+}
+
+void ADogPawn::OnCrouchPressed()
+{
+	if (bIsInteracting) return;
+
+	ABaseDogPawn::OnCrouchPressed();
+}
+
+float ADogPawn::GetHeadEdgeX() const
+{
+	if (!VisualContainer || !CollisionHead) return GetActorLocation().X;
+
+	float Direction = FMath::Sign(VisualContainer->GetForwardVector().X);
+	return CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);
+}
+
+float ADogPawn::GetBodyEdgeY() const
+{
+	if (!CollisionBody) return GetActorLocation().Y;
+
+	return CollisionBody->GetScaledBoxExtent().Y;
+}
+
+float ADogPawn::GetContainerForward() const
+{
+	if (!VisualContainer) return 1.f;
+	return FMath::Sign(VisualContainer->GetForwardVector().X);
+}
+
+void ADogPawn::SetIsScared(bool NewIsScared)
+{
+	IsScared = NewIsScared;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		if (NewIsScared)
+		{
+			DisableInput(PC);
+		}
+		else
+		{
+			EnableInput(PC);
+		}
+	}
+}
+bool ADogPawn::GetIsScared() const
+{
+	return IsScared;
+}
+void ADogPawn::ScaredRun(float DeltaTime)
+{
+	if (!StopScaryEventZone || !IsScared) return;
+
+	float DogX = GetActorLocation().X;
+	float SafeX = StopScaryEventZone->GetActorLocation().X;
+
+	float Direction = (DogX > SafeX) ? -1.f : 1.f;
+
+	float DeltaX = 0.f;
+
+	if (Direction > 0)
+	{
+		OnLookRightVisual();
+		DeltaX = ScarySpeed * DeltaTime;
+	}
+	else
+	{
+		OnLookLeftVisual();
+		DeltaX = -ScarySpeed * DeltaTime;
+	}
+	
+	float DistanceToSafe = FMath::Abs(SafeX - DogX);
+
+	if (DistanceToSafe <= 10.f)
+	{
+		ForceStopMovement();
+		DeltaX = 0.f;
+
+		SetIsScared(false);
+		return;
+	}
+
+	FVector DeltaLocation(DeltaX, 0.f, 0.f);
+	AddActorWorldOffset(DeltaLocation, true);
+}
+
+void ADogPawn::HandleHouseIsLightingState(bool bIsLighting)
+{
+	HouseIsLightingUp = bIsLighting;
+}
+
+void ADogPawn::HideInCover(float DeltaTime)
+{
+	if (CanHideInCover())
+	{
+		IsInCover = true;
+		TargetY = StealthCover->GetCoverZoneY() + GetBodyEdgeY();
+		
+	}
+	else
+	{
+		TargetY = OriginalY;
+
+		if (FMath::Abs(GetActorLocation().Y - OriginalY) < 1.f)
+		{
+			IsInCover = false;
+		}
+	}
+
+	if (IsInCover || FMath::Abs(GetActorLocation().Y - OriginalY) > 0.1f)
+	{
+		FVector CurrentLocation = GetActorLocation();
+		float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
+		float DeltaY = NewY - CurrentLocation.Y;
+
+		AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+	}
+}
+bool ADogPawn::CanHideInCover() const
+{
+	if (!IsInCover)
+	{
+		return HouseIsLightingUp && StealthCover && bWantToCrouch;
+	}
+	return StealthCover && bWantToCrouch;
+}
+
+void ADogPawn::SetCurrentCover(AStealthCover* NewCover)
+{
+	StealthCover = NewCover;	
+}
+
+
+// Called when the game starts or when spawned
+void ADogPawn::BeginPlay()
+{
+	ABaseDogPawn::BeginPlay();
+
+	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
+
+	AActor* FoundHouseActor = UGameplayStatics::GetActorOfClass(GetWorld(), AHouseAlarmActor::StaticClass());
+	if (FoundHouseActor)
+	{
+		AHouseAlarmActor* House = Cast<AHouseAlarmActor>(FoundHouseActor);
+		if (House)
+		{
+			House->OnHouseStateChange.AddDynamic(this, &ADogPawn::HandleHouseIsLightingState);
+		}
+	}
+}
+
+// Called every frame
+void ADogPawn::Tick(float DeltaTime)
+{
+	ABaseDogPawn::Tick(DeltaTime);
+
+	if (CameraComp)
+	{
+		FVector CameraLoc = CameraComp->GetComponentLocation();
+		CameraLoc.Y = OriginalY;
+		CameraComp->SetWorldLocation(CameraLoc);
+	}
+
+	if (IsJumping)
+	{
+		CheckJumpExecution();
+	}
+	
+	HideInCover(DeltaTime);
+
+	if (!bWantToCrouch && IsCrouching)
+	{
+		TryStandUp();
+	}
+
+	if (IsScared)
+	{
+		ScaredRun(DeltaTime);
+	}
+}
+
+// Called to bind functionality to input
+void ADogPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
