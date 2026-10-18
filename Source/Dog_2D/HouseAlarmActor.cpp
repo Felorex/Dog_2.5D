@@ -335,8 +335,8 @@ void AHouseAlarmActor::Tick(float DeltaTime)
 		break;
 	case EHouseState::HumanWatching:
 		HumanWatchingInWindow(DeltaTime);
-		if (CanHumanLeft()) { TransitionToHumanLeft(); }
-		else if (CanPlayerCaught()) { TransitionToPlayerCaught(); }
+		if (CanPlayerCaught()) { TransitionToPlayerCaught(); }		
+		else if (CanHumanLeft()) { TransitionToHumanLeft(); }
 		else if (CanDogPunished()) { TransitionToDogPunished(); }
 		break;
 	case EHouseState::PlayerCaught:
