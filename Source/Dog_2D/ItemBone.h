@@ -41,5 +41,4 @@ protected:
 	float VelocityZ;
 	float Gravity;
 
-	FTimerHandle GroundCheckTimerHandle;
 };

@@ -17,18 +17,8 @@ void ADogGameMode::SetGameStateMode(EGameStateMode NewState)
 {
 	CurrentState = NewState;
 
-	if (GEngine)
-	{
-		FString StateName = (CurrentState == EGameStateMode::MainMenu) ? TEXT("MainMenu") : TEXT("Gameplay/Pause");
-		UE_LOG(LogTemp, Warning, TEXT("!!! STATE SWITCH TO: %s !!!"), *StateName);
-	}
-
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PC) 
-	{
-		UE_LOG(LogTemp, Error, TEXT("!!! CRITICAL: PlayerController IS NULL !!!"));
-		return;
-	}
+	if (!PC) return;
 
 	switch (CurrentState)
 	{
@@ -56,18 +46,11 @@ void ADogGameMode::SetupMainMenuMode(APlayerController* PC)
 
 	if (MainMenuWidgetClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("!!! MainMenuWidgetClass IS VALID, CREATING WIDGET ..."));
-
 		MenuWidget = CreateWidget<UMainMenuWidget>(PC, MainMenuWidgetClass);
 		if (MenuWidget)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("!! WIDGET CREATED SUCCESSFULLY, ADDING TO VIEWPORT !!"));
 			MenuWidget->AddToViewport();
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("!! ERROR: MainMenuWidgetClass IS EMPTY !!"));
 	}
 }
 void ADogGameMode::SetupGameplayMode(APlayerController* PC)

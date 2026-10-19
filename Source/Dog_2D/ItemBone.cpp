@@ -30,7 +30,7 @@ bool AItemBone::IsOnGround()
 	if (!BoneComponent) return false;
 
 	FVector Start = BoneComponent->GetComponentLocation();
-	
+
 	FVector Origin;
 	FVector BoxExtent;
 	GetActorBounds(false, Origin, BoxExtent);
@@ -38,21 +38,13 @@ bool AItemBone::IsOnGround()
 
 	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 2.f);
 	FHitResult HitResult;
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
 
-	bool bHit = UKismetSystemLibrary::LineTraceSingle(
-		this,
-		Start,
-		End,
-		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		HitResult,
-		true
-	);
-	return bHit && HitResult.IsValidBlockingHit();
+	FCollisionObjectQueryParams ObjParams(ECC_WorldStatic);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ObjParams, Params);
+	return bHit;
 }
 
 void AItemBone::UpdatePhysics(float DeltaTime)
@@ -134,19 +126,6 @@ void AItemBone::BeginPlay()
 
 	FVector StartLocation = GetActorLocation();
 
-	GetWorldTimerManager().SetTimer(GroundCheckTimerHandle, [this, StartLocation]()
-		{
-			if (IsOnGround())
-			{
-				GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
-				return;
-			}
-			SetActorLocation(StartLocation);
-			VelocityZ = 0.0f;
-			SetActorTickEnabled(true);
-
-			GetWorldTimerManager().ClearTimer(GroundCheckTimerHandle);
-		}, 0.1f, false);
 }
 
 // Called every frame
