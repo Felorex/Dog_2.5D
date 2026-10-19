@@ -5,18 +5,14 @@
 #include "Kismet/GameplayStatics.h"
 
 
-//void ADogGameMode::BeginPlay()
-//{
-//	Super::BeginPlay();
-//
-//	SetGameStateMode(CurrentState);	
-//}
-void ADogGameMode::PostInitializeComponents()
+
+void ADogGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	Super::PostInitializeComponents();
+	Super::PostLogin(NewPlayer);
 
 	SetGameStateMode(CurrentState);
 }
+
 void ADogGameMode::SetGameStateMode(EGameStateMode NewState)
 {
 	CurrentState = NewState;
