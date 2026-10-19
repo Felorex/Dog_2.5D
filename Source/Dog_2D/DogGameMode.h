@@ -4,19 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "DogModeBase.generated.h"
+#include "DogGameMode.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class DOG_2D_API ADogModeBase : public AGameModeBase
+class DOG_2D_API ADogGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "Game Flow")
-	void RestartCurrentLevel();
-
+	UFUNCTION(BlueprintCallable, Category = "Game Lifecycle")
+	void ResetLevelOnCaught();
 };

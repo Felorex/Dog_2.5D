@@ -69,6 +69,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
 	UMaterialInterface* LightOffMaterial;
 
+	UFUNCTION()
+	void OnLightZoneBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnLightZoneEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	void TransitionToHouseWokeUp();
 	void TransitionToLightOn();
@@ -77,6 +81,7 @@ protected:
 	void TransitionToLightOff();
 	void TransitionToHouseSleep();
 	void TransitionToDogPunished();
+	void TransitionToPlayerCaught();
 
 	void LightIsOn(float DeltaTime);
 	void LightIsOff();
@@ -85,6 +90,8 @@ protected:
 	void HumanLeftWindow(float DeltaTime);
 
 	void DogGetPunished();
+
+	void PlayerGetCaught();
 
 	bool DogAgainBarking();
 
@@ -95,11 +102,13 @@ protected:
 	bool CanHumanLeft();
 	bool CanDogPunished();
 	bool CanHouseSleep();
+	bool CanPlayerCaught();
 
 	bool IsLightActive;
 	bool IsHumanInWindow;
 
 	bool DogIsBarking;
+	bool PlayerInsideLight;
 	
 	float InsideLightTimer;
 	float HumanWatchTimer;
