@@ -6,8 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
 
-#include "BaseDogPawn.h"
-#include "StealthCover.h"
+#include "Characters/BaseDogPawn.h"
+#include "Interactive/StealthCover.h"
 
 #include "DogPawn.generated.h"    
 

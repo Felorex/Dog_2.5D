@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "StealthCover.h"
+#include "Interactive/StealthCover.h"
 #include "Kismet/GameplayStatics.h"
 
 

@@ -1,15 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "HouseAlarmActor.h"
+#include "Interactive/HouseAlarmActor.h"
 
-#include "NpcDogPawn.h"
-#include "DogPawn.h"
+#include "Characters/NpcDogPawn.h"
+#include "Characters/DogPawn.h"
 
-#include "DogGameMode.h"
+#include "GameModes/DogGameMode.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "Engine/Engine.h"
 
 
 // Sets default values

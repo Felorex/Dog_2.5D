@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "MainMenuWidget.h"
-#include "PauseMenuWidget.h"
+#include "UI/MainMenuWidget.h"
+#include "UI/PauseMenuWidget.h"
 #include "DogGameMode.generated.h"
 
 

@@ -10,6 +10,8 @@ public class Dog_2D : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
+		PublicIncludePaths.Add(ModuleDirectory);
+		
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		// Uncomment if you are using Slate UI

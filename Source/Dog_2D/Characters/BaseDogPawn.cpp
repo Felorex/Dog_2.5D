@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "BaseDogPawn.h"
+#include "Characters/BaseDogPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "InteractiveBox.h"
-#include "ItemBone.h"
+#include "Interactive/InteractiveBox.h"
+#include "Interactive/ItemBone.h"
 
 // Sets default values
 ABaseDogPawn::ABaseDogPawn()

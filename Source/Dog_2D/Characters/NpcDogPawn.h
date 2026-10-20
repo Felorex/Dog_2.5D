@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseDogPawn.h"
+#include "Characters/BaseDogPawn.h"
 #include "NpcDogPawn.generated.h"
 
 

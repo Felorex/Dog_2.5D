@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "NpcDogPawn.h"
-#include "ItemBone.h"
-#include "DogPawn.h"
-#include "kismet/GameplayStatics.h"
+#include "Characters/NpcDogPawn.h"
+#include "Interactive/ItemBone.h"
+#include "Characters/DogPawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 
 ANpcDogPawn::ANpcDogPawn()

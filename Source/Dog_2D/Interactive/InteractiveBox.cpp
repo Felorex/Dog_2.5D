@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "InteractiveBox.h"
-#include "DogPawn.h"
+#include "Interactive/InteractiveBox.h"
+#include "Characters/DogPawn.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
