@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "UI/MainMenuWidget.h"
 #include "UI/PauseMenuWidget.h"
+#include "UI/CaughtWidget.h"
 #include "DogGameMode.generated.h"
 
 
@@ -14,7 +15,8 @@ enum class EGameStateMode :uint8
 {
 	MainMenu,
 	Gameplay,
-	PauseMenu
+	PauseMenu,
+	Caught
 };
 /**
  * 
@@ -33,7 +35,7 @@ public:
 	void TogglePauseMenu();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Lifecycle")
-	void ResetLevelOnCaught();
+	void OnPlayerCaught();
 
 protected:
 
@@ -44,6 +46,10 @@ protected:
 	void SetupMainMenuMode(APlayerController* PC);
 	void SetupGameplayMode(APlayerController* PC);
 	void SetupPauseMenuMode(APlayerController* PC);
+	void SetupCaughtMode(APlayerController* PC);
+
+	void OnCaughtSequenceFinished();
+	void ResetLevelOnCaught();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
 	TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
@@ -51,9 +57,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
 	TSubclassOf<UPauseMenuWidget> PauseMenuWidgetClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
+	TSubclassOf<UCaughtWidget> CaughtWidgetClass;
+
 	UPROPERTY()
 	UMainMenuWidget* MenuWidget;
 
 	UPROPERTY()
 	UPauseMenuWidget* PauseMenuWidget;
+
+	UPROPERTY()
+	UCaughtWidget* CaughtWidget;
 };

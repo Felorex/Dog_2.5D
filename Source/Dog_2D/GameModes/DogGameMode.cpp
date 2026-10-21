@@ -8,7 +8,7 @@
 
 void ADogGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	Super::PostLogin(NewPlayer);
+	AGameModeBase::PostLogin(NewPlayer);
 
 	SetGameStateMode(CurrentState);
 }
@@ -30,6 +30,9 @@ void ADogGameMode::SetGameStateMode(EGameStateMode NewState)
 		break;
 	case EGameStateMode::PauseMenu:
 		SetupPauseMenuMode(PC);
+		break;
+	case EGameStateMode::Caught:
+		SetupCaughtMode(PC);
 		break;
 	default:
 		break;
@@ -76,7 +79,45 @@ void ADogGameMode::SetupPauseMenuMode(APlayerController* PC)
 		PC->SetInputMode(InputMode);
 	}
 }
+void ADogGameMode::SetupCaughtMode(APlayerController* PC)
+{
+	if (PC)
+	{
+		PC->SetIgnoreMoveInput(true);
 
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+	}
+
+	if (CaughtWidgetClass)
+	{
+		CaughtWidget = CreateWidget<UCaughtWidget>(PC, CaughtWidgetClass);
+		if (CaughtWidget)
+		{
+			CaughtWidget->AddToViewport();
+
+			CaughtWidget->OnCaughtAnimationFinished.AddDynamic(this, &ADogGameMode::OnCaughtSequenceFinished);
+		}
+	}
+}
+void ADogGameMode::OnCaughtSequenceFinished()
+{
+	if (GetWorld())
+	{
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			PC->ResetIgnoreInputFlags();
+		}
+		ResetLevelOnCaught();
+
+		SetGameStateMode(EGameStateMode::Gameplay);
+	}
+}
+
+void ADogGameMode::OnPlayerCaught()
+{
+	SetGameStateMode(EGameStateMode::Caught);
+}
 void ADogGameMode::ResetLevelOnCaught()
 {
 	if (GetWorld())
