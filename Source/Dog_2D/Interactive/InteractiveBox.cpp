@@ -173,6 +173,7 @@ void AInteractiveBox::StartFollow(ADogPawn* NewPlayer)
 	if (BoxComponent)
 	{
 		BoxComponent->IgnoreActorWhenMoving(Player, true);
+		AddTickPrerequisiteActor(Player);
 	}
 }
 void AInteractiveBox::StopFollow()
@@ -182,6 +183,7 @@ void AInteractiveBox::StopFollow()
 	if (BoxComponent && Player)
 	{
 		BoxComponent->IgnoreActorWhenMoving(Player, false);
+		RemoveTickPrerequisiteActor(Player);
 	}
 
 	if (Player)

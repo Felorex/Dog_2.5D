@@ -49,6 +49,8 @@ AHouseAlarmActor::AHouseAlarmActor()
 	IsLightActive = false;
 	IsHumanInWindow = false;
 
+	bHasPlayerBeenCaught = false;
+
 	TargetDog = nullptr;
 
 	InsideLightTimer = 0.f;
@@ -80,6 +82,7 @@ void AHouseAlarmActor::OnLightZoneEndOverlap(UPrimitiveComponent* OverlappedComp
 }
 void AHouseAlarmActor::TransitionToHouseWokeUp()
 {
+	bHasPlayerBeenCaught = false;
 	CurrentHouseState = EHouseState::HouseWokeUp;
 }
 
@@ -197,12 +200,15 @@ bool AHouseAlarmActor::CanPlayerCaught()
 }
 void AHouseAlarmActor::PlayerGetCaught()
 {
+	if (bHasPlayerBeenCaught) return;
+
 	if (GetWorld())
 	{
 		ADogGameMode* GameMode = Cast<ADogGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 		if (GameMode)
 		{
-			GameMode->ResetLevelOnCaught();
+			GameMode->OnPlayerCaught();
+			bHasPlayerBeenCaught = true;
 		}
 	}
 }
@@ -357,6 +363,5 @@ void AHouseAlarmActor::Tick(float DeltaTime)
 	default:
 		break;
 	}
-
 }
 

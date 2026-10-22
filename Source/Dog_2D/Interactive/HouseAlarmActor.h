@@ -107,8 +107,10 @@ protected:
 	bool IsLightActive;
 	bool IsHumanInWindow;
 
+	bool bHasPlayerBeenCaught;
+
 	bool DogIsBarking;
-	bool PlayerInsideLight;
+	bool PlayerInsideLight;	
 	
 	float InsideLightTimer;
 	float HumanWatchTimer;
