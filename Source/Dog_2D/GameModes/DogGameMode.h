@@ -48,8 +48,10 @@ protected:
 	void SetupPauseMenuMode(APlayerController* PC);
 	void SetupCaughtMode(APlayerController* PC);
 
-	void OnCaughtSequenceFinished();
 	void ResetLevelOnCaught();
+
+	UFUNCTION()
+	void OnCaughtSequenceFinished();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
 	TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;

@@ -79,13 +79,15 @@ void ADogGameMode::SetupPauseMenuMode(APlayerController* PC)
 		PC->SetInputMode(InputMode);
 	}
 }
-void ADogGameMode::SetupCaughtMode(APlayerController* PC)
-{
+
+void ADogGameMode::SetupCaughtMode(APlayerController* PC) {
 	if (PC)
 	{
 		PC->SetIgnoreMoveInput(true);
 
-		FInputModeGameOnly InputMode;
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(nullptr);
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
 	}
 
@@ -100,32 +102,30 @@ void ADogGameMode::SetupCaughtMode(APlayerController* PC)
 		}
 	}
 }
-void ADogGameMode::OnCaughtSequenceFinished()
-{
+void ADogGameMode::OnCaughtSequenceFinished() {
 	if (GetWorld())
 	{
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
-			PC->ResetIgnoreInputFlags();
+			FInputModeGameOnly InputMode;
+			PC->SetInputMode(InputMode);
 		}
+
 		ResetLevelOnCaught();
 
 		SetGameStateMode(EGameStateMode::Gameplay);
+	}
+}
+void ADogGameMode::ResetLevelOnCaught() {
+	if (GetWorld()) {
+		FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GetWorld()); 
+		UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
 	}
 }
 
 void ADogGameMode::OnPlayerCaught()
 {
 	SetGameStateMode(EGameStateMode::Caught);
-}
-void ADogGameMode::ResetLevelOnCaught()
-{
-	if (GetWorld())
-	{
-		FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GetWorld());
-
-		UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
-	}
 }
 
 void ADogGameMode::TogglePauseMenu()
