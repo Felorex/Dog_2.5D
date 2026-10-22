@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "UI/MainMenuWidget.h"
-#include "UI/PauseMenuWidget.h"
-#include "UI/CaughtWidget.h"
 #include "DogGameMode.generated.h"
 
+class UMainMenuWidget;
+class UPauseMenuWidget;
+class UCaughtWidget;
 
 UENUM(BlueprintType)
 enum class EGameStateMode :uint8
@@ -28,13 +28,13 @@ class DOG_2D_API ADogGameMode : public AGameModeBase
 	
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameMode Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameMode|State")
 	EGameStateMode CurrentState;
 
-	UFUNCTION(BlueprintCallable, Category = "GameMode Settings")
+	UFUNCTION(BlueprintCallable, Category = "GameMode|Logic")
 	void TogglePauseMenu();
 
-	UFUNCTION(BlueprintCallable, Category = "Game Lifecycle")
+	UFUNCTION(BlueprintCallable, Category = "GameMode|Logic")
 	void OnPlayerCaught();
 
 protected:
@@ -53,21 +53,21 @@ protected:
 	UFUNCTION()
 	void OnCaughtSequenceFinished();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GameMode|UI Classes")
 	TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GameMode|UI Classes")
 	TSubclassOf<UPauseMenuWidget> PauseMenuWidgetClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Menu Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GameMode|UI Classes")
 	TSubclassOf<UCaughtWidget> CaughtWidgetClass;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	UMainMenuWidget* MenuWidget;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	UPauseMenuWidget* PauseMenuWidget;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	UCaughtWidget* CaughtWidget;
 };

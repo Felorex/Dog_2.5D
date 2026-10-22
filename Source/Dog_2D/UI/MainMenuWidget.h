@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/Button.h"
 #include "MainMenuWidget.generated.h"
 
+class UButton;
 
 /**
  * 

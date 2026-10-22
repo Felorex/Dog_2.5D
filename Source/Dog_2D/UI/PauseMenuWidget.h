@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/Button.h"
 #include "PauseMenuWidget.generated.h"
 
+
+class UButton;
 /**
  * 
  */

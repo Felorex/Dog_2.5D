@@ -3,6 +3,9 @@
 
 #include "GameModes/DogGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/MainMenuWidget.h"
+#include "UI/PauseMenuWidget.h"
+#include "UI/CaughtWidget.h"
 
 
 
@@ -89,6 +92,7 @@ void ADogGameMode::SetupCaughtMode(APlayerController* PC) {
 		InputMode.SetWidgetToFocus(nullptr);
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
 	}
 
 	if (CaughtWidgetClass)
@@ -107,17 +111,19 @@ void ADogGameMode::OnCaughtSequenceFinished() {
 	{
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
+			PC->ResetIgnoreInputFlags();
+
 			FInputModeGameOnly InputMode;
 			PC->SetInputMode(InputMode);
 		}
-
 		ResetLevelOnCaught();
 
 		SetGameStateMode(EGameStateMode::Gameplay);
 	}
 }
 void ADogGameMode::ResetLevelOnCaught() {
-	if (GetWorld()) {
+	if (GetWorld()) 
+	{
 		FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GetWorld()); 
 		UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
 	}
