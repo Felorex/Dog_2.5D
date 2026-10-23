@@ -67,19 +67,56 @@ void ADogGameMode::SetupGameplayMode(APlayerController* PC)
 }
 void ADogGameMode::SetupPauseMenuMode(APlayerController* PC)
 {
-	if (PauseMenuWidgetClass)
+	if (PauseMenuWidgetClass && PC)
 	{
 		PauseMenuWidget = CreateWidget<UPauseMenuWidget>(PC, PauseMenuWidgetClass);
 		if (PauseMenuWidget)
 		{
+			PauseMenuWidget->OnResumePressed.AddDynamic(this, &ADogGameMode::TogglePauseMenu);
 			PauseMenuWidget->AddToViewport();
 		}
 
 		UGameplayStatics::SetGamePaused(GetWorld(), true);
 		PC->bShowMouseCursor = true;
 
-		FInputModeUIOnly InputMode;
+		FInputModeGameAndUI InputMode;
+		if (PauseMenuWidget)
+		{
+			InputMode.SetWidgetToFocus(PauseMenuWidget->TakeWidget());
+		}
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
+	}
+}
+void ADogGameMode::TogglePauseMenu()
+{
+	if (GetWorld())
+	{
+		APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		if (CurrentState == EGameStateMode::Gameplay)
+		{
+			SetGameStateMode(EGameStateMode::PauseMenu);
+		}
+		else if (CurrentState == EGameStateMode::PauseMenu)
+		{
+			UGameplayStatics::SetGamePaused(GetWorld(), false);
+
+			if (PC)
+			{
+				PC->bShowMouseCursor = false;
+
+				FInputModeGameOnly InputMode;
+				PC->SetInputMode(InputMode);
+			}
+
+			if (PauseMenuWidget)
+			{
+				PauseMenuWidget->OnResumePressed.RemoveDynamic(this, &ADogGameMode::TogglePauseMenu);
+				PauseMenuWidget->RemoveFromParent();
+				PauseMenuWidget = nullptr;
+			}
+			SetGameStateMode(EGameStateMode::Gameplay);
+		}
 	}
 }
 
@@ -134,22 +171,3 @@ void ADogGameMode::OnPlayerCaught()
 	SetGameStateMode(EGameStateMode::Caught);
 }
 
-void ADogGameMode::TogglePauseMenu()
-{
-	if (CurrentState == EGameStateMode::Gameplay)
-	{
-		SetGameStateMode(EGameStateMode::PauseMenu);
-	}
-	else if (CurrentState == EGameStateMode::PauseMenu)
-	{
-		UGameplayStatics::SetGamePaused(GetWorld(), false);
-
-		if (PauseMenuWidget)
-		{
-			PauseMenuWidget->RemoveFromParent();
-			PauseMenuWidget = nullptr;
-		}
-
-		SetGameStateMode(EGameStateMode::Gameplay);
-	}
-}

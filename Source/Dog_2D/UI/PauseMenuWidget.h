@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PauseMenuWidget.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnResumePressedSignature);
 
 class UButton;
 /**
@@ -16,7 +17,13 @@ class DOG_2D_API UPauseMenuWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
+public:
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnResumePressedSignature OnResumePressed;
+
 protected:
+
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta = (BindWidget))

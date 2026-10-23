@@ -5,6 +5,7 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Core/DogGameInstance.h"
 
 
 void UMainMenuWidget::NativeConstruct()
@@ -25,8 +26,13 @@ void UMainMenuWidget::OnStartClicked()
 {
 	if (GetWorld())
 	{
-		FString FirstLevel = TEXT("FirstLevel");
-		UGameplayStatics::OpenLevel(GetWorld(), FName(*FirstLevel));
+		UDogGameInstance* DogGI = UDogGameInstance::Get(GetWorld());
+		if (DogGI)
+		{
+			FName FirstLevel = DogGI->GetFirstLevelMapName();
+
+			UGameplayStatics::OpenLevel(GetWorld(), FirstLevel);
+		}
 	}
 }
 void UMainMenuWidget::OnExitClicked()
