@@ -145,41 +145,21 @@ void ADogPawn::DoJump()
 	ABaseDogPawn::DoJump();
 }
 
-void ADogPawn::UpdatePositionY(float DeltaTime)
+float ADogPawn::CalculateTargetY() const
 {
-	if (!CollisionHead || !CollisionBody  || IsInCover) return;
-
-	if ((IsJumping || (IsGrounded && !bIsInteracting)) && Box)
+	if (IsInCover && StealthCover)
 	{
-		float BoxTop = Box->GetBoxEdgeZ();
-		float DogBottom = GetBottomZ();
-
-		if ((DogBottom + 5.f) > BoxTop)
-		{
-			TargetY = Box->GetActorLocation().Y;
-		}
-		else
-		{
-			TargetY = OriginalY;
-		}		
+		return StealthCover->GetCoverZoneY();
 	}
-	else if (bIsInteracting && Box)
+
+	if (bIsInteracting && Box)
 	{
 		float BoxY = Box->GetBoxEdgeY();
 		float DogY = CollisionHead->GetUnscaledBoxExtent().Y;
-		
-		TargetY = DogY + BoxY;
-	}
-	else
-	{
-		TargetY = OriginalY;
-	}
 
-	FVector CurrentLocation = GetActorLocation();
-	float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
-	float DeltaY = NewY - CurrentLocation.Y;
-
-	AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+		return DogY + BoxY;
+	}
+	return ABaseDogPawn::CalculateTargetY();
 }
 
 void ADogPawn::CanInteractWithObjects()
@@ -384,27 +364,11 @@ void ADogPawn::HideInCover(float DeltaTime)
 {
 	if (CanHideInCover())
 	{
-		IsInCover = true;
-		TargetY = StealthCover->GetCoverZoneY() + GetBodyEdgeY();
-		
+		IsInCover = true;			
 	}
 	else
 	{
-		TargetY = OriginalY;
-
-		if (FMath::Abs(GetActorLocation().Y - OriginalY) < 1.f)
-		{
-			IsInCover = false;
-		}
-	}
-
-	if (IsInCover || FMath::Abs(GetActorLocation().Y - OriginalY) > 0.1f)
-	{
-		FVector CurrentLocation = GetActorLocation();
-		float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
-		float DeltaY = NewY - CurrentLocation.Y;
-
-		AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+		IsInCover = false;
 	}
 }
 bool ADogPawn::CanHideInCover() const
@@ -452,14 +416,14 @@ void ADogPawn::Tick(float DeltaTime)
 		CameraComp->SetWorldLocation(CameraLoc);
 	}
 
-	if (IsJumping)
+	if (bIsJumping)
 	{
 		CheckJumpExecution();
 	}
 	
 	HideInCover(DeltaTime);
 
-	if (!bWantToCrouch && IsCrouching)
+	if (!bWantToCrouch && bIsCrouching)
 	{
 		TryStandUp();
 	}

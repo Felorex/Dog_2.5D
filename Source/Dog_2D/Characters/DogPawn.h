@@ -79,9 +79,10 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
-	virtual void UpdatePositionY(float DeltaTime) override;
 	virtual bool CanMoveWithHead(float DeltaX) override;
 	
+	virtual float CalculateTargetY() const override;
+
 	virtual void CanInteractWithObjects() override;
 
 

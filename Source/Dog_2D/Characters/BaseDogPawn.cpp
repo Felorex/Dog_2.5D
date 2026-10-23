@@ -2,7 +2,6 @@
 
 
 #include "Characters/BaseDogPawn.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Interactive/InteractiveBox.h"
 #include "Interactive/ItemBone.h"
 
@@ -42,22 +41,15 @@ ABaseDogPawn::ABaseDogPawn()
 		MouthComp->SetupAttachment(Head);
 	}
 
-	Gravity = -980.0f;
 	VelocityZ = 0.0f;
 	VelocityX = 0.0f;
-	MoveSpeed = 300.0f;
-	CrouchSpeed = 150.0f;
-	JumpForce = 600.f;
 
-	IsGrounded = false;
-	IsCrouching = false;
-	IsJumping = false;
+	bIsGrounded = false;
+	bIsCrouching = false;
+	bIsJumping = false;
 	bWantToCrouch = false;
 	bWantToJump = false;
-
 	bIsTakingItem = false;
-
-	InteractDistance = 100.f;
 
 	Box = nullptr;
 	Bone = nullptr;
@@ -65,7 +57,7 @@ ABaseDogPawn::ABaseDogPawn()
 
 void ABaseDogPawn::Move(float Value)
 {
-	float CurrentMoveSpeed = IsCrouching ? CrouchSpeed : MoveSpeed;
+	float CurrentMoveSpeed = bIsCrouching ? CrouchSpeed : MoveSpeed;
 	VelocityX = Value * CurrentMoveSpeed;
 
 	float DeltaX = VelocityX * GetWorld()->GetDeltaSeconds();
@@ -125,8 +117,7 @@ bool ABaseDogPawn::CanMoveWithHead(float DeltaX)
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		HitResult,
 		true
 	);
@@ -148,17 +139,17 @@ void ABaseDogPawn::StopMove()
 
 void ABaseDogPawn::DoJump()
 {
-	if (IsJumping || IsCrouching) return;
+	if (bIsJumping || bIsCrouching) return;
 
 	if (Box)
 	{
 		ClearInteractiveBox();
 	}
-	if (IsGrounded)
+	if (bIsGrounded)
 	{
 		VelocityZ = JumpForce;
-		IsGrounded = false;
-		IsJumping = true;
+		bIsGrounded = false;
+		bIsJumping = true;
 		bWantToJump = true;
 
 		GetWorldTimerManager().SetTimer(
@@ -177,7 +168,7 @@ void ABaseDogPawn::StopJump()
 
 void ABaseDogPawn::UpdatePhysics(float DeltaTime)
 {
-	if (!IsGrounded)
+	if (!bIsGrounded)
 	{
 		VelocityZ += Gravity * DeltaTime;
 	}
@@ -192,13 +183,13 @@ void ABaseDogPawn::UpdatePhysics(float DeltaTime)
 
 void ABaseDogPawn::OnCrouchPressed()
 {
-	if (IsCrouching || IsJumping) return;
+	if (bIsCrouching || bIsJumping) return;
 
 	bWantToCrouch = true;
 
-	if (IsGrounded)
+	if (bIsGrounded)
 	{
-		IsCrouching = true;
+		bIsCrouching = true;
 
 		if (Box)
 		{
@@ -217,7 +208,7 @@ void ABaseDogPawn::OnCrouchReleased()
 {
 	bWantToCrouch = false;
 
-	if (IsCrouching)
+	if (bIsCrouching)
 	{
 		TryStandUp();
 	}
@@ -226,14 +217,14 @@ void ABaseDogPawn::TryStandUp()
 {
 	if (CanStandUp())
 	{
-		IsCrouching = false;
+		bIsCrouching = false;
 
 		OnStandVisual();
 	}
 }
 bool ABaseDogPawn::CanStandUp()
 {
-	if (!IsCrouching || !CollisionBody || !CollisionHead) return true;
+	if (!bIsCrouching || !CollisionBody || !CollisionHead) return true;
 
 	FVector HeadLocation = CollisionHead->GetComponentLocation();
 	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
@@ -254,7 +245,7 @@ bool ABaseDogPawn::CanStandUp()
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		TArray<AActor*>({ this }),
-		EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		HitHeadResult,
 		true,
 		FLinearColor::Red,
@@ -281,8 +272,7 @@ bool ABaseDogPawn::CanStandUp()
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		TArray<AActor*>({ this }),
-		//EDrawDebugTrace::None,
-		EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		HitBodyResult,
 		true,
 		FLinearColor::Red,
@@ -301,7 +291,7 @@ void ABaseDogPawn::CanInteractWithObjects()
 {
 	if (!CollisionBody || !CollisionHead) return;
 
-	if (IsCrouching || IsJumping || bIsTakingItem) return;
+	if (bIsCrouching || bIsJumping || bIsTakingItem) return;
 
 	FVector LookDirection = GetActorForwardVector();
 	FRotator TraceRotation = GetActorRotation();
@@ -348,8 +338,7 @@ void ABaseDogPawn::CanInteractWithObjects()
 		InteractTraceChannel,
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		InteractHitResult,
 		true
 	);
@@ -430,33 +419,36 @@ void ABaseDogPawn::ClearItemBone()
 	bIsTakingItem = false;
 }
 
-void ABaseDogPawn::UpdatePositionY(float DeltaTime)
+float ABaseDogPawn::CalculateTargetY() const
 {
-	if (!CollisionHead || !CollisionBody) return;
-
-	if (IsJumping && Box)
+	if ((bIsGrounded || bIsJumping) && Box)
 	{
 		float BoxTop = Box->GetBoxEdgeZ();
 		float DogBottom = GetBottomZ();
 
-		if ((DogBottom + 5.f) > BoxTop)
+		if ((DogBottom + BoxAlignmentZOffset) > BoxTop)
 		{
-			TargetY = Box->GetActorLocation().Y;
-		}
-		else
-		{
-			TargetY = OriginalY;
+			return Box->GetActorLocation().Y;
 		}
 	}
-	else
-	{
-		TargetY = OriginalY;
-	}
-
+	return OriginalY;
+}
+void ABaseDogPawn::ApplyPositionIntrolationY(float DeltaTime)
+{
 	FVector CurrentLocation = GetActorLocation();
-	float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, 5.f);
+	float NewY = FMath::FInterpTo(CurrentLocation.Y, TargetY, DeltaTime, YInterpSpeed);
 	float DeltaY = NewY - CurrentLocation.Y;
+
 	AddActorWorldOffset(FVector(0.f, DeltaY, 0.f), false);
+}
+
+void ABaseDogPawn::UpdatePositionY(float DeltaTime)
+{
+	if (!CollisionHead || !CollisionBody) return;
+
+	TargetY = CalculateTargetY();
+
+	ApplyPositionIntrolationY(DeltaTime);
 }
 
 float ABaseDogPawn::GetBottomZ() const
@@ -518,19 +510,18 @@ void ABaseDogPawn::CheckGrounded()
 		ObjectTypes,
 		false,
 		TArray<AActor*>({ this }),
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		HitResult,
 		true
 	);
-	if (IsJumping && VelocityZ > 0.0f)
+	if (bIsJumping && VelocityZ > 0.0f)
 	{
-		IsGrounded = false;
+		bIsGrounded = false;
 		return;
 	}
 	if (bHit && HitResult.IsValidBlockingHit())
 	{
-		IsGrounded = true;
+		bIsGrounded = true;
 
 		AActor* HitActor = HitResult.GetActor();
 		if (HitActor && HitActor->IsA(AInteractiveBox::StaticClass()))
@@ -540,13 +531,13 @@ void ABaseDogPawn::CheckGrounded()
 	}
 	else
 	{
-		IsGrounded = false;
+		bIsGrounded = false;
 	}
 }
 
 void ABaseDogPawn::CheckBoxUnderfoot()
 {
-	if (!IsJumping) return;
+	if (!bIsJumping) return;
 
 	FVector Start = GetActorLocation();
 
@@ -566,8 +557,7 @@ void ABaseDogPawn::CheckBoxUnderfoot()
 		UEngineTypes::ConvertToTraceType(ECC_WorldDynamic),
 		false,
 		ActorToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
+		DogDebugTraceMode.GetValue(),
 		Result,
 		true
 	);
@@ -591,9 +581,9 @@ void ABaseDogPawn::CheckBoxUnderfoot()
 }
 void ABaseDogPawn::CheckJumpExecution()
 {
-	if (!IsJumping) return;
+	if (!bIsJumping) return;
 
-	if (IsGrounded)
+	if (bIsGrounded)
 	{
 		if (GetWorldTimerManager().IsTimerActive(CheckBoxTimer))
 		{
@@ -604,7 +594,7 @@ void ABaseDogPawn::CheckJumpExecution()
 		{
 			Box = nullptr;
 		}
-		IsJumping = false;
+		bIsJumping = false;
 	}
 }
 
@@ -639,41 +629,6 @@ void ABaseDogPawn::Depenetration()
 	}
 }
 
-void ABaseDogPawn::DepenetrationBodyZ()
-{
-	if (!CollisionBody) return;
-
-	FVector BodyLoc = CollisionBody->GetComponentLocation();
-	FVector BodyExtent = CollisionBody->GetScaledBoxExtent();
-	FQuat Rotation = CollisionBody->GetComponentQuat();
-	FHitResult Result;
-
-	bool Overlap = GetWorld()->SweepSingleByChannel(
-		Result,
-		BodyLoc,
-		BodyLoc,
-		Rotation,
-		ECC_WorldStatic,
-		FCollisionShape::MakeBox(BodyExtent),
-		FCollisionQueryParams::DefaultQueryParam
-	);
-
-	if (Overlap && Result.bStartPenetrating)
-	{
-		FVector DepenetrationVector = Result.Normal * (Result.PenetrationDepth + 1.f);
-
-		DepenetrationVector.X = 0.f;
-		DepenetrationVector.Y = 0.f;
-
-		if (DepenetrationVector.Z < 0.f)
-		{
-			DepenetrationVector *= -1.f;
-		}
-
-		AddActorWorldOffset(DepenetrationVector, false);
-	}
-}
-
 // Called when the game starts or when spawned
 void ABaseDogPawn::BeginPlay()
 {
@@ -681,8 +636,6 @@ void ABaseDogPawn::BeginPlay()
 	
 	OriginalY = GetActorLocation().Y;
 	TargetY = OriginalY;
-
-	DepenetrationBodyZ();
 
 	if (CollisionBody && CollisionHead)
 	{
