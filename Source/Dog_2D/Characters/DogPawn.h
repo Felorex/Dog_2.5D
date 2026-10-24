@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
-
+#include "Kismet/KismetSystemLibrary.h"
 #include "Characters/BaseDogPawn.h"
 #include "Interactive/StealthCover.h"
 
@@ -28,7 +28,6 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void Move(float Value) override;
-	virtual void StopMove() override;
 
 	virtual void DoJump() override;
 
@@ -79,9 +78,11 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
-	virtual void UpdatePositionY(float DeltaTime) override;
-	virtual bool CanMoveWithHead(float DeltaX) override;
+	virtual bool CanMoveWithHead(const FVector& Delta) override;
+	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const override;
 	
+	virtual float CalculateTargetY() const override;
+
 	virtual void CanInteractWithObjects() override;
 
 
@@ -90,6 +91,15 @@ protected:
 
 	UPROPERTY()
 	USceneComponent* CameraComp;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event", meta = (BlueprintProtected = "true"))
+	float ScarySpeed = 400.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event", meta = (BlueprintProtected = "true"))
+	float ScaryStopDistanceThreshold = 10.f;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Dog|Environment")
+	TObjectPtr<AHouseAlarmActor> HouseAlarmSystem;
 
 	void InteractMovementX();
 	float CalculateAlignmentDeltaX() const;
@@ -107,5 +117,5 @@ protected:
 	bool bIsPulling;
 
 	bool IsScared;
-	float ScarySpeed;
+	
 };

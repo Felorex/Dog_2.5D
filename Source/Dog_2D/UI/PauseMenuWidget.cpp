@@ -2,8 +2,10 @@
 
 
 #include "UI/PauseMenuWidget.h"
+#include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Core/DogGameInstance.h"
 
 void UPauseMenuWidget::NativeConstruct()
 {
@@ -25,7 +27,8 @@ void UPauseMenuWidget::NativeConstruct()
 
 void UPauseMenuWidget::OnResumeClicked()
 {
-	if (GetWorld())
+	OnResumePressed.Broadcast();
+	/*if (GetWorld())
 	{
 		UGameplayStatics::SetGamePaused(GetWorld(), false);
 
@@ -38,7 +41,7 @@ void UPauseMenuWidget::OnResumeClicked()
 		}
 
 		RemoveFromParent();
-	}
+	}*/
 }
 
 void UPauseMenuWidget::OnToMainMenuClicked()
@@ -47,8 +50,12 @@ void UPauseMenuWidget::OnToMainMenuClicked()
 	{
 		UGameplayStatics::SetGamePaused(GetWorld(), false);
 
-		FString MainMenuLevel = TEXT("MainMenuMap");
-		UGameplayStatics::OpenLevel(GetWorld(), FName(*MainMenuLevel));
+		UDogGameInstance* DogGI = UDogGameInstance::Get(GetWorld());
+		if (DogGI)
+		{
+			FName MainMenuLevel = DogGI->GetMainMenuMapName();
+			UGameplayStatics::OpenLevel(GetWorld(), MainMenuLevel);
+		}
 	}
 }
 void UPauseMenuWidget::OnExitGameClicked()

@@ -2,7 +2,6 @@
 
 
 #include "UI/CaughtWidget.h"
-#include "Kismet/GameplayStatics.h"
 
 void UCaughtWidget::BroadcastAnimationFinished()
 {

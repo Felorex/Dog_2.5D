@@ -29,7 +29,7 @@ bool ANpcDogPawn::CheckHomeLocation() const
 {
 	float CurrentLoc = GetActorLocation().X;
 
-	if (FMath::Abs(CurrentLoc - HomeX) <= 5.f && IsGrounded)
+	if (FMath::Abs(CurrentLoc - HomeX) <= 5.f && bIsGrounded)
 	{
 		return true;
 	}

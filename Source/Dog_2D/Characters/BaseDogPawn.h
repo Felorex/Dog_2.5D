@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "BaseDogPawn.generated.h"
 
 class AInteractiveBox;
@@ -26,7 +27,7 @@ public:
 	virtual void Move(float Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-	virtual void StopMove();
+	virtual void ForceStopMovement();
 
 	UFUNCTION(BlueprintCallable, Category = "Jump")
 	virtual void DoJump();
@@ -67,8 +68,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "TakeVisual")
 	void OnDropVisual();
 
-	virtual void ForceStopMovement();
-
 	void ClearInteractiveBox();
 	void ClearItemBone();
 
@@ -80,20 +79,99 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void UpdatePositionY(float DeltaTime);
+	virtual bool CanMoveWithHead(const FVector& Delta);
+	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const {}
 
-	virtual bool CanMoveWithHead(float DeltaX);
+	virtual float CalculateTargetY() const;
 
 	virtual void CanInteractWithObjects();
 	FHitResult InteractHitResult;
 
-	void UpdatePhysics(float DeltaTime);
-	bool getIsGrounded() const { return IsGrounded; }
-	void CheckGrounded();
-	void Depenetration();
-	
-	void DepenetrationBodyZ();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
+	TObjectPtr<USceneComponent> VisualContainer;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
+	TObjectPtr<USceneComponent> MouthComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
+	TObjectPtr<UBoxComponent> CollisionBody;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
+	TObjectPtr<UBoxComponent> CollisionHead;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
+	TObjectPtr<UStaticMeshComponent> Head;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Movement", meta = (BlueprintProtected = "true"))
+	float MoveSpeed = 300.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Movement", meta = (BlueprintProtected = "true"))
+	float CrouchSpeed = 150.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Movement", meta = (BlueprintProtected = "true"))
+	float BoxAlignmentZOffset = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Movement", meta = (BlueprintProtected = "true"))
+	float YInterpSpeed = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float JumpForce = 600.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float Gravity = -980.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float GroundCheckDistance = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float GroundTraceHalfWidth = 15.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float BoxSearchDistance = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	FVector BoxSearchExtent = FVector(30.f, 100.f, 10.f);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float BoxMinSurfaceNormalZ = 0.7f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float DepenetrationPadding = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float BoxDropThreshold = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractDistance = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractionTimerInterval = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractTraceStartHeightOffset = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractTraceEndHeightOffset = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	FVector InteractBoxExtent = FVector(30.f, 120.f, 65.f);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Debug")
+	TEnumAsByte<EDrawDebugTrace::Type> DogDebugTraceMode = EDrawDebugTrace::None;
+
+	UPROPERTY()
+	TObjectPtr<AInteractiveBox> Box;
+	UPROPERTY()
+	TObjectPtr<AItemBone> Bone;
+
+	void UpdatePhysics(float DeltaTime);
+	void UpdatePositionY(float DeltaTime);
+	bool getIsGrounded() const { return bIsGrounded; }
+	bool IsTouchingGround(FHitResult& OutHitResult);
+	void AnalyzeGroundType(AActor* HitActor);
+	void CheckGrounded();
+	void DepenetrationHead();
+
+	void ApplyPositionIntrolationY(float DeltaTime);
+
+	bool ScanForInteractableObject(FHitResult& HitResult);
+	bool ScanForBoxUnderfoot(FHitResult& HitResult);
 	void CheckBoxUnderfoot();
 	void CheckJumpExecution();
 	
@@ -102,22 +180,6 @@ protected:
 
 	bool WantToTakeItem();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* VisualContainer;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* MouthComp;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* CollisionBody;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* CollisionHead;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* Head;
-
-	UPROPERTY()
-	AInteractiveBox* Box;
-	UPROPERTY()
-	AItemBone* Bone;
-
 	float OriginalExtentBodyZ;
 	float OriginalExtentHeadZ;
 
@@ -125,24 +187,14 @@ protected:
 	float TargetY;
 
 	bool bWantToJump;
-	bool IsJumping;
-	float JumpForce;
-
-	float Gravity;
-	bool IsGrounded;
-
+	bool bIsJumping;
+	bool bIsGrounded;
 	bool bWantToCrouch;
-	float CrouchSpeed;
-	bool IsCrouching;
+	bool bIsCrouching;
+	bool bIsTakingItem;
 
 	float VelocityZ;
 	float VelocityX;
-	float MoveSpeed;
-
-	bool bIsTakingItem;
-
-	float InteractDistance;
-
 
 	FTimerHandle CheckBoxTimer;
 	FTimerHandle InteractTimer;

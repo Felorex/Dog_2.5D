@@ -23,5 +23,4 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Events")
 	void BroadcastAnimationFinished();
-
 };
