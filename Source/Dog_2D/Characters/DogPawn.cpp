@@ -2,9 +2,10 @@
 
 
 #include "Characters/DogPawn.h"
-#include "Kismet/KismetSystemLibrary.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Interactive/InteractiveBox.h"
+#include "Interactive/ItemBone.h"
 #include "Interactive/HouseAlarmActor.h"
 
 
@@ -20,7 +21,6 @@ ADogPawn::ADogPawn()
 	bIsPulling = false;
 
 	IsScared = false;
-	ScarySpeed = 400.f;
 
 	StealthCover = nullptr;
 	IsInCover = false;
@@ -42,54 +42,21 @@ void ADogPawn::Move(float Value)
 		ABaseDogPawn::Move(Value);
 	}	
 }
-void ADogPawn::StopMove()
-{
-	VelocityX = 0.0f;
 
-	SetMoveDirection(0.0f);
+void ADogPawn::GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const
+{
+	if (bIsInteracting && Box)
+	{
+		Actors.Add(Box);
+	}
 }
-bool ADogPawn::CanMoveWithHead(float DeltaX)
+bool ADogPawn::CanMoveWithHead(const FVector& Delta)
 {
 	if (bIsInteracting && Box && bIsPushing && Box->GetIsBoxBlocked()) return false;
 
 	if (bIsInteracting && Box && bIsPulling && Box->GetIsBoxBlocked()) return true;
 
-	FVector Start = CollisionHead->GetComponentLocation();
-	FVector HeadExtent = CollisionHead->GetScaledBoxExtent();
-	FRotator Rotation = CollisionHead->GetComponentRotation();
-
-	FVector End = Start;
-	End.X += DeltaX;
-
-	FHitResult HitResult;
-
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
-	if (bIsInteracting && Box)
-	{
-		ActorsToIgnore.Add(Box);
-	}
-
-	bool bHit = UKismetSystemLibrary::BoxTraceSingle(
-		this,
-		Start,
-		End,
-		HeadExtent,
-		Rotation,
-		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		//EDrawDebugTrace::ForDuration,
-		HitResult,
-		true
-	);
-
-	if (bHit && HitResult.IsValidBlockingHit())
-	{
-		return false;
-	}
-	return true;
+	return ABaseDogPawn::CanMoveWithHead(Delta);
 }
 void ADogPawn::SetMoveDirection(float Value)
 {
@@ -166,30 +133,23 @@ void ADogPawn::CanInteractWithObjects()
 {
 	if (bIsInteracting) return;
 
-	ABaseDogPawn::CanInteractWithObjects();
+	if (!bIsInteracting) Box = nullptr;
+	if (!bIsTakingItem) Bone = nullptr;
 
-	if (InteractHitResult.IsValidBlockingHit() && InteractHitResult.GetActor())
+	if (ScanForInteractableObject(InteractHitResult) && InteractHitResult.GetActor())
 	{
-		AInteractiveBox* FoundBox = Cast<AInteractiveBox>(InteractHitResult.GetActor());
-
-		if (FoundBox)
+		if (AInteractiveBox* FoundBox = Cast<AInteractiveBox>(InteractHitResult.GetActor()))
 		{
 			Box = FoundBox;
 			Bone = nullptr;
 			return;
 		}
-
-		if (Bone)
+		else if (AItemBone* FoundBone = Cast<AItemBone>(InteractHitResult.GetActor()))
 		{
+			Bone = FoundBone;
 			Box = nullptr;
 			return;
 		}
-	}
-	else 
-	{
-		if (!bIsInteracting) Box = nullptr;
-
-		if (!bIsTakingItem) Bone = nullptr;
 	}
 }
 void ADogPawn::InteractPressed()
@@ -342,7 +302,7 @@ void ADogPawn::ScaredRun(float DeltaTime)
 	
 	float DistanceToSafe = FMath::Abs(SafeX - DogX);
 
-	if (DistanceToSafe <= 10.f)
+	if (DistanceToSafe <= ScaryStopDistanceThreshold)
 	{
 		ForceStopMovement();
 		DeltaX = 0.f;
@@ -393,14 +353,9 @@ void ADogPawn::BeginPlay()
 
 	CameraComp = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("SpringArm")));
 
-	AActor* FoundHouseActor = UGameplayStatics::GetActorOfClass(GetWorld(), AHouseAlarmActor::StaticClass());
-	if (FoundHouseActor)
+	if (HouseAlarmSystem)
 	{
-		AHouseAlarmActor* House = Cast<AHouseAlarmActor>(FoundHouseActor);
-		if (House)
-		{
-			House->OnHouseStateChange.AddDynamic(this, &ADogPawn::HandleHouseIsLightingState);
-		}
+		HouseAlarmSystem->OnHouseStateChange.AddDynamic(this, &ADogPawn::HandleHouseIsLightingState);
 	}
 }
 
@@ -415,18 +370,8 @@ void ADogPawn::Tick(float DeltaTime)
 		CameraLoc.Y = OriginalY;
 		CameraComp->SetWorldLocation(CameraLoc);
 	}
-
-	if (bIsJumping)
-	{
-		CheckJumpExecution();
-	}
 	
-	HideInCover(DeltaTime);
-
-	if (!bWantToCrouch && bIsCrouching)
-	{
-		TryStandUp();
-	}
+	HideInCover(DeltaTime);	
 
 	if (IsScared)
 	{

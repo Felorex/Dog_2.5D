@@ -27,9 +27,6 @@ public:
 	virtual void Move(float Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-	virtual void StopMove();
-
-	UFUNCTION(BlueprintCallable, Category = "Movement")
 	virtual void ForceStopMovement();
 
 	UFUNCTION(BlueprintCallable, Category = "Jump")
@@ -82,28 +79,13 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void UpdatePositionY(float DeltaTime);
-	virtual bool CanMoveWithHead(float DeltaX);
+	virtual bool CanMoveWithHead(const FVector& Delta);
+	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const {}
 
 	virtual float CalculateTargetY() const;
 
 	virtual void CanInteractWithObjects();
 	FHitResult InteractHitResult;
-
-	void UpdatePhysics(float DeltaTime);
-	bool getIsGrounded() const { return bIsGrounded; }
-	void CheckGrounded();
-	void Depenetration();
-
-	void ApplyPositionIntrolationY(float DeltaTime);
-
-	void CheckBoxUnderfoot();
-	void CheckJumpExecution();
-	
-	void TryStandUp();
-	bool CanStandUp();
-
-	bool WantToTakeItem();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dog|Components")
 	TObjectPtr<USceneComponent> VisualContainer;
@@ -134,8 +116,41 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
 	float Gravity = -980.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float GroundCheckDistance = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float GroundTraceHalfWidth = 15.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float BoxSearchDistance = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	FVector BoxSearchExtent = FVector(30.f, 100.f, 10.f);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float BoxMinSurfaceNormalZ = 0.7f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Physics", meta = (BlueprintProtected = "true"))
+	float DepenetrationPadding = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float BoxDropThreshold = 5.f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
 	float InteractDistance = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractionTimerInterval = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractTraceStartHeightOffset = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	float InteractTraceEndHeightOffset = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interaction", meta = (BlueprintProtected = "true"))
+	FVector InteractBoxExtent = FVector(30.f, 120.f, 65.f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Debug")
 	TEnumAsByte<EDrawDebugTrace::Type> DogDebugTraceMode = EDrawDebugTrace::None;
@@ -144,6 +159,26 @@ protected:
 	TObjectPtr<AInteractiveBox> Box;
 	UPROPERTY()
 	TObjectPtr<AItemBone> Bone;
+
+	void UpdatePhysics(float DeltaTime);
+	void UpdatePositionY(float DeltaTime);
+	bool getIsGrounded() const { return bIsGrounded; }
+	bool IsTouchingGround(FHitResult& OutHitResult);
+	void AnalyzeGroundType(AActor* HitActor);
+	void CheckGrounded();
+	void DepenetrationHead();
+
+	void ApplyPositionIntrolationY(float DeltaTime);
+
+	bool ScanForInteractableObject(FHitResult& HitResult);
+	bool ScanForBoxUnderfoot(FHitResult& HitResult);
+	void CheckBoxUnderfoot();
+	void CheckJumpExecution();
+	
+	void TryStandUp();
+	bool CanStandUp();
+
+	bool WantToTakeItem();
 
 	float OriginalExtentBodyZ;
 	float OriginalExtentHeadZ;
