@@ -35,39 +35,51 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(BlueprintAssignable, Category = "House State")
+	UPROPERTY(BlueprintAssignable, Category = "House|House Events")
 	FOnHouseStateChange OnHouseStateChange;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Connection")
-	ANpcDogPawn* TargetDog;
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "House|AI Connection")
+	TObjectPtr<ANpcDogPawn> TargetDog;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void HandleDogBarkingState(bool IsBarking);
+	void HandleDogBarkingState(bool bIsBarking);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* HouseMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "House|Components")
+	TObjectPtr<UStaticMeshComponent> HouseMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* WindowMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "House|Components")
+	TObjectPtr<UStaticMeshComponent> WindowMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* LightZoneCollision;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "House|Components")
+	TObjectPtr<UBoxComponent> LightZoneCollision;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* ShadowHuman;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "House|Components")
+	TObjectPtr<UStaticMeshComponent> ShadowHuman;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House State")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House|House State")
 	EHouseState CurrentHouseState;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
-	UMaterialInterface* LightOnMaterial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House|Light Settings")
+	TObjectPtr<UMaterialInterface> LightOnMaterial;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Light Settings")
-	UMaterialInterface* LightOffMaterial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "House|Light Settings")
+	TObjectPtr<UMaterialInterface> LightOffMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "House|Balance")
+	float BarkTimeToWakeUp = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "House|Balance")
+	float LightOnBeforeWatchDuration = 4.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "House|Balance")
+	float HumanWatchingDuration = 4.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "House|Balance")
+	float LightOffDelay = 3.f;
 
 	UFUNCTION()
 	void OnLightZoneBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -85,12 +97,9 @@ protected:
 
 	void LightIsOn(float DeltaTime);
 	void LightIsOff();
-
 	void HumanWatchingInWindow(float DeltaTime);
 	void HumanLeftWindow(float DeltaTime);
-
 	void DogGetPunished();
-
 	void PlayerGetCaught();
 
 	bool DogAgainBarking();
@@ -104,15 +113,15 @@ protected:
 	bool CanHouseSleep();
 	bool CanPlayerCaught();
 
-	bool IsLightActive;
-	bool IsHumanInWindow;
+	bool bIsLightActive;
+	bool bIsHumanInWindow;
 
 	bool bHasPlayerBeenCaught;
 
-	bool DogIsBarking;
-	bool PlayerInsideLight;	
+	bool bDogIsBarking;
+	bool bPlayerInsideLight;	
 	
 	float InsideLightTimer;
 	float HumanWatchTimer;
-	float HumanOffLigthTimer;
+	float HumanOffLightTimer;
 };

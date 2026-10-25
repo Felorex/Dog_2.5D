@@ -35,12 +35,15 @@ void AStealthCover::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	AActor::NotifyActorBeginOverlap(OtherActor);
 
-	if (OtherActor)
+	if (OtherActor && (OtherActor != this))
 	{
-		IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
-		if (StealthAgent)
+		if (OtherActor->GetClass()->ImplementsInterface(UStealthCoverInterface::StaticClass()))
 		{
-			StealthAgent->SetCurrentCover(this);
+			IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
+			if (StealthAgent)
+			{
+				StealthAgent->SetCurrentCover(this);
+			}
 		}
 	}
 }
@@ -49,12 +52,15 @@ void AStealthCover::NotifyActorEndOverlap(AActor* OtherActor)
 {
 	AActor::NotifyActorEndOverlap(OtherActor);
 
-	if (OtherActor)
+	if (OtherActor && (OtherActor != this))
 	{
-		IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
-		if (StealthAgent)
+		if (OtherActor->GetClass()->ImplementsInterface(UStealthCoverInterface::StaticClass()))
 		{
-			StealthAgent->SetCurrentCover(nullptr);
+			IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
+			if (StealthAgent)
+			{
+				StealthAgent->SetCurrentCover(nullptr);
+			}
 		}
 	}
 }
@@ -72,7 +78,7 @@ float AStealthCover::GetCoverZoneY() const
 		}
 		else // ECoverType::Outside
 		{
-			return BoxLocation.Y + BoxExtent.Y + 10.f;
+			return BoxLocation.Y + BoxExtent.Y + OutsideCoverClearanceOffset;
 		}
 	}
 	return GetActorLocation().Y;

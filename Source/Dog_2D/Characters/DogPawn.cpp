@@ -20,10 +20,10 @@ ADogPawn::ADogPawn()
 	bIsPushing = false;
 	bIsPulling = false;
 
-	IsScared = false;
+	bIsScared = false;
 
 	StealthCover = nullptr;
-	IsInCover = false;
+	bIsInCover = false;
 }
 
 void ADogPawn::Move(float Value)
@@ -114,7 +114,7 @@ void ADogPawn::DoJump()
 
 float ADogPawn::CalculateTargetY() const
 {
-	if (IsInCover && StealthCover)
+	if (bIsInCover && StealthCover)
 	{
 		return StealthCover->GetCoverZoneY();
 	}
@@ -259,7 +259,7 @@ float ADogPawn::GetContainerForward() const
 
 void ADogPawn::SetIsScared(bool NewIsScared)
 {
-	IsScared = NewIsScared;
+	bIsScared = NewIsScared;
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
@@ -276,11 +276,11 @@ void ADogPawn::SetIsScared(bool NewIsScared)
 }
 bool ADogPawn::GetIsScared() const
 {
-	return IsScared;
+	return bIsScared;
 }
 void ADogPawn::ScaredRun(float DeltaTime)
 {
-	if (!StopScaryEventZone || !IsScared) return;
+	if (!StopScaryEventZone || !bIsScared) return;
 
 	float DogX = GetActorLocation().X;
 	float SafeX = StopScaryEventZone->GetActorLocation().X;
@@ -317,25 +317,25 @@ void ADogPawn::ScaredRun(float DeltaTime)
 
 void ADogPawn::HandleHouseIsLightingState(bool bIsLighting)
 {
-	HouseIsLightingUp = bIsLighting;
+	bHouseIsLightingUp = bIsLighting;
 }
 
 void ADogPawn::HideInCover(float DeltaTime)
 {
 	if (CanHideInCover())
 	{
-		IsInCover = true;			
+		bIsInCover = true;			
 	}
 	else
 	{
-		IsInCover = false;
+		bIsInCover = false;
 	}
 }
 bool ADogPawn::CanHideInCover() const
 {
-	if (!IsInCover)
+	if (!bIsInCover)
 	{
-		return HouseIsLightingUp && StealthCover && bWantToCrouch;
+		return bHouseIsLightingUp && StealthCover && bWantToCrouch;
 	}
 	return StealthCover && bWantToCrouch;
 }
@@ -373,7 +373,7 @@ void ADogPawn::Tick(float DeltaTime)
 	
 	HideInCover(DeltaTime);	
 
-	if (IsScared)
+	if (bIsScared)
 	{
 		ScaredRun(DeltaTime);
 	}

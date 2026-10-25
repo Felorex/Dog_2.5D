@@ -49,16 +49,18 @@ protected:
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 	virtual void NotifyActorEndOverlap(AActor* OtherActor) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cover Type")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cover|Settings")
 	ECoverType CoverType;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* CoverMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover|Settings")
+	float OutsideCoverClearanceOffset = 10.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* RootCollision;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UStaticMeshComponent> CoverMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* CoverCollision;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UBoxComponent> RootCollision;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UBoxComponent> CoverCollision;
 };

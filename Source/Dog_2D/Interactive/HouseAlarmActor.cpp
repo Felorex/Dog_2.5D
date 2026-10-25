@@ -2,12 +2,9 @@
 
 
 #include "Interactive/HouseAlarmActor.h"
-
 #include "Characters/NpcDogPawn.h"
 #include "Characters/DogPawn.h"
-
 #include "GameModes/DogGameMode.h"
-
 #include "Kismet/GameplayStatics.h"
 
 
@@ -46,16 +43,14 @@ AHouseAlarmActor::AHouseAlarmActor()
 
 	CurrentHouseState = EHouseState::HouseSleep;
 
-	IsLightActive = false;
-	IsHumanInWindow = false;
+	bIsLightActive = false;
+	bIsHumanInWindow = false;
 
 	bHasPlayerBeenCaught = false;
 
-	TargetDog = nullptr;
-
 	InsideLightTimer = 0.f;
 	HumanWatchTimer = 0.f;
-	HumanOffLigthTimer = 0.f;
+	HumanOffLightTimer = 0.f;
 }
 
 void AHouseAlarmActor::OnLightZoneBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -65,7 +60,7 @@ void AHouseAlarmActor::OnLightZoneBeginOverlap(UPrimitiveComponent* OverlappedCo
 		APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 		if (OtherActor == Player)
 		{
-			PlayerInsideLight = true;
+			bPlayerInsideLight = true;
 		}
 	}
 }
@@ -76,7 +71,7 @@ void AHouseAlarmActor::OnLightZoneEndOverlap(UPrimitiveComponent* OverlappedComp
 		APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 		if (OtherActor == Player)
 		{
-			PlayerInsideLight = false;
+			bPlayerInsideLight = false;
 		}
 	}
 }
@@ -88,25 +83,20 @@ void AHouseAlarmActor::TransitionToHouseWokeUp()
 
 bool AHouseAlarmActor::CanLightOn()
 {
-	if (IsLightActive || !TargetDog) return false;
+	if (bIsLightActive || !TargetDog) return false;
 
-	if (TargetDog->GetBarkingTimer() >= 5.f)
-	{
-		return true;
-	}
-	return false;
+	return (TargetDog->GetBarkingTimer() >= BarkTimeToWakeUp);
 }
 void AHouseAlarmActor::TransitionToLightOn()
 {
 	InsideLightTimer = 0.f;
-
 	CurrentHouseState = EHouseState::LightOn;
 }
 void AHouseAlarmActor::LightIsOn(float DeltaTime)
 {
-	if (!IsLightActive)
+	if (!bIsLightActive)
 	{
-		IsLightActive = true;
+		bIsLightActive = true;
 		OnHouseStateChange.Broadcast(true);
 	}
 
@@ -124,19 +114,11 @@ void AHouseAlarmActor::LightIsOn(float DeltaTime)
 
 bool AHouseAlarmActor::CanHumanWatch()
 {
-	if (InsideLightTimer >= 4.f && TargetDog && DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	return (InsideLightTimer >= LightOnBeforeWatchDuration && TargetDog && bDogIsBarking);
 }
 bool AHouseAlarmActor::CanLightOffBeforeHuman()
 {
-	if (TargetDog && !DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	return (TargetDog && !bDogIsBarking);
 }
 void AHouseAlarmActor::TransitionToHumanWatching()
 {
@@ -145,10 +127,9 @@ void AHouseAlarmActor::TransitionToHumanWatching()
 }
 void AHouseAlarmActor::HumanWatchingInWindow(float DeltaTime)
 {	
-	if (!IsHumanInWindow)
+	if (!bIsHumanInWindow)
 	{
-		IsHumanInWindow = true;		
-
+		bIsHumanInWindow = true;
 		ShadowHuman->SetHiddenInGame(false);
 	}
 	HumanWatchTimer += DeltaTime;
@@ -168,21 +149,13 @@ void AHouseAlarmActor::DogGetPunished()
 }
 bool AHouseAlarmActor::CanHumanLeft()
 {
-	if (!IsHumanInWindow) return false;
+	if (!bIsHumanInWindow) return false;
 
-	if (HumanWatchTimer >= 4.f && TargetDog && !DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	return (HumanWatchTimer >= HumanWatchingDuration && TargetDog && !bDogIsBarking);
 }
 bool AHouseAlarmActor::CanDogPunished()
 {
-	if (IsHumanInWindow && HumanWatchTimer >= 4.f && TargetDog && DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	return (bIsHumanInWindow && HumanWatchTimer >= HumanWatchingDuration && TargetDog && bDogIsBarking);
 }
 
 void AHouseAlarmActor::TransitionToPlayerCaught()
@@ -192,11 +165,7 @@ void AHouseAlarmActor::TransitionToPlayerCaught()
 }
 bool AHouseAlarmActor::CanPlayerCaught()
 {
-	if (IsHumanInWindow && HumanWatchTimer >= 4.f && PlayerInsideLight)
-	{
-		return true;
-	}
-	return false;
+	return (bIsHumanInWindow && HumanWatchTimer >= HumanWatchingDuration && bPlayerInsideLight);
 }
 void AHouseAlarmActor::PlayerGetCaught()
 {
@@ -215,25 +184,21 @@ void AHouseAlarmActor::PlayerGetCaught()
 
 void AHouseAlarmActor::TransitionToHumanLeft()
 {
-	HumanOffLigthTimer = 0.f;
-	IsHumanInWindow = false;
+	HumanOffLightTimer = 0.f;
+	bIsHumanInWindow = false;
 
 	ShadowHuman->SetHiddenInGame(true);
 	CurrentHouseState = EHouseState::HumanLeft;
 }
 void AHouseAlarmActor::HumanLeftWindow(float DeltaTime)
 {	
-	HumanOffLigthTimer += DeltaTime;
+	HumanOffLightTimer += DeltaTime;
 }
 
 bool AHouseAlarmActor::CanLightOff()
 {
-	if (!IsLightActive) return false;
-	if (HumanOffLigthTimer >= 3.f && TargetDog && !DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	if (!bIsLightActive) return false;
+	return (HumanOffLightTimer >= LightOffDelay && TargetDog && !bDogIsBarking);
 }
 void AHouseAlarmActor::TransitionToLightOff()
 {
@@ -241,9 +206,9 @@ void AHouseAlarmActor::TransitionToLightOff()
 }
 void AHouseAlarmActor::LightIsOff()
 {
-	if (IsLightActive)
+	if (bIsLightActive)
 	{
-		IsLightActive = false;
+		bIsLightActive = false;
 		OnHouseStateChange.Broadcast(false);
 	}
 
@@ -259,11 +224,7 @@ void AHouseAlarmActor::LightIsOff()
 
 bool AHouseAlarmActor::CanHouseSleep()
 {
-	if (!IsLightActive && !IsHumanInWindow)
-	{
-		return true;
-	}
-	return false;
+	return (!bIsLightActive && !bIsHumanInWindow);
 }
 void AHouseAlarmActor::TransitionToHouseSleep()
 {
@@ -273,18 +234,14 @@ void AHouseAlarmActor::TransitionToHouseSleep()
 
 bool AHouseAlarmActor::DogAgainBarking()
 {
-	if (IsLightActive && TargetDog && DogIsBarking)
-	{
-		return true;
-	}
-	return false;
+	return (bIsLightActive && TargetDog && bDogIsBarking);
 }
 
-void AHouseAlarmActor::HandleDogBarkingState(bool IsBarking)
+void AHouseAlarmActor::HandleDogBarkingState(bool bIsBarking)
 {
-	DogIsBarking = IsBarking;
+	bDogIsBarking = bIsBarking;
 
-	if (IsBarking)
+	if (bIsBarking)
 	{
 		SetActorTickEnabled(true);
 	}
@@ -296,11 +253,6 @@ void AHouseAlarmActor::BeginPlay()
 	Super::BeginPlay();
 
 	SetActorTickEnabled(false);
-
-	if (!TargetDog)
-	{
-		TargetDog = Cast<ANpcDogPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ANpcDogPawn::StaticClass()));
-	}
 
 	if (TargetDog)
 	{

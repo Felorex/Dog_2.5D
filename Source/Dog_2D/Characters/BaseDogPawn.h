@@ -83,7 +83,6 @@ protected:
 	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const {}
 
 	virtual float CalculateTargetY() const;
-
 	virtual void CanInteractWithObjects();
 	FHitResult InteractHitResult;
 

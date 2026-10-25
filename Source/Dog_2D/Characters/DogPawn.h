@@ -23,16 +23,11 @@ public:
 	ADogPawn();	
 
 	virtual void SetCurrentCover(class AStealthCover* NewCover) override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void Move(float Value) override;
-
 	virtual void DoJump() override;
-
 	virtual void OnCrouchPressed() override;
-
 	virtual void ForceStopMovement() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_Movement")
@@ -56,7 +51,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
 	void SetMoveDirection(float Value);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scary_Event")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|Scary Event")
 	AActor* StopScaryEventZone;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Safe_Zone")
@@ -82,7 +77,6 @@ protected:
 	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const override;
 	
 	virtual float CalculateTargetY() const override;
-
 	virtual void CanInteractWithObjects() override;
 
 
@@ -110,12 +104,12 @@ protected:
 
 	float GetBodyEdgeY() const;
 
-	bool HouseIsLightingUp;
-	bool IsInCover;
+	bool bHouseIsLightingUp;
+	bool bIsInCover;
 
 	bool bIsPushing;
 	bool bIsPulling;
 
-	bool IsScared;
+	bool bIsScared;
 	
 };

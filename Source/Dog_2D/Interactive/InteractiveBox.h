@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "InteractiveBox.generated.h"
 
 class ADogPawn;
@@ -23,7 +24,7 @@ public:
 	void StartFollow(ADogPawn* NewPlayer);
 	void StopFollow();
 
-	bool GetIsBoxBlocked() { return IsBoxBlocked; }
+	bool GetIsBoxBlocked() { return bIsBoxBlocked; }
 
 	float GetBoxEdgeY() const;
 	float GetBoxLeftEdgeX() const;
@@ -39,16 +40,27 @@ protected:
 	void UpdateMovementX();
 	void CheckWallCollision(const FHitResult& Hit);
 
-	UPROPERTY()
-	ADogPawn* Player;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Box|Physics")
+	float GravityScale = 2000.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* BoxComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Box|Physics")
+	float GroundTracePadding = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Box|Physics")
+	float BreakInteractFallSpeed = -300.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Box|Debug")
+	TEnumAsByte<EDrawDebugTrace::Type> BoxDebugTraceMode = EDrawDebugTrace::None;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Box|Components")
+	TObjectPtr<UStaticMeshComponent> BoxComponent;
+
+	UPROPERTY()
+	TObjectPtr<ADogPawn> Player;
 
 	bool bIsFollowing;
-	bool IsBoxBlocked;
+	bool bIsBoxBlocked;
 
 	float BoxVelocityX;
-	float BoxVelocityZ;
-	float GravityScale;
+	float BoxVelocityZ;	
 };
