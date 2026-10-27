@@ -2,9 +2,8 @@
 
 
 #include "Interactive/ItemBone.h"
-#include "Characters/BaseDogPawn.h"
 #include "Components/BoxComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
+
 
 
 // Sets default values
@@ -20,9 +19,6 @@ AItemBone::AItemBone()
 	}
 
 	VelocityZ = 0.0f;
-	Gravity = -980.0f;
-
-	Base = nullptr;
 }
 
 bool AItemBone::IsOnGround()
@@ -36,14 +32,19 @@ bool AItemBone::IsOnGround()
 	GetActorBounds(false, Origin, BoxExtent);
 	float HalfHeight = BoxExtent.Z;
 
-	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 2.f);
+	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + GroundTracePadding);
 	FHitResult HitResult;
 
 	FCollisionObjectQueryParams ObjParams(ECC_WorldStatic);
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	bool bHit = GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ObjParams, Params);
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(
+		HitResult, 
+		Start, 
+		End, 
+		ObjParams, 
+		Params);
 	return bHit;
 }
 
@@ -63,18 +64,21 @@ void AItemBone::UpdatePhysics(float DeltaTime)
 	}	
 }
 
-bool AItemBone::TryTake(ABaseDogPawn* NewBase)
+bool AItemBone::CanTakeItem(AActor* IgnoreActor)
 {
-	if (!BoneComponent|| !NewBase) return false;
+	if (!BoneComponent) return false;
 
-	FVector Start = BoneComponent->GetComponentLocation() + FVector(0.0f, 0.0f, 20.f);
-	FVector End = Start + FVector(0.0f, 0.0f, 60.f);
+	FVector Start = BoneComponent->GetComponentLocation() + FVector(0.0f, 0.0f, TakeTraceStartOffset);
+	FVector End = Start + FVector(0.0f, 0.0f, TakeTraceLength);
 
 	FHitResult HitResult;
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
-	ActorsToIgnore.Add(NewBase);
+	if (IgnoreActor)
+	{
+		ActorsToIgnore.Add(IgnoreActor);
+	}
 	
 
 	bool bHit = UKismetSystemLibrary::LineTraceSingle(
@@ -84,8 +88,7 @@ bool AItemBone::TryTake(ABaseDogPawn* NewBase)
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
 		ActorsToIgnore,
-		//EDrawDebugTrace::ForDuration,
-		EDrawDebugTrace::None,
+		BoneDebugTraceMode.GetValue(),
 		HitResult,
 		true,
 		FLinearColor::Red,
@@ -93,13 +96,7 @@ bool AItemBone::TryTake(ABaseDogPawn* NewBase)
 		5.0f
 	);
 
-	if (bHit && HitResult.IsValidBlockingHit())
-	{
-		NewBase->ClearItemBone();
-		
-		return false;
-	}
-	return true;
+	return !(bHit && HitResult.IsValidBlockingHit());
 }
 void AItemBone::DisablePhysics()
 {
@@ -126,7 +123,6 @@ void AItemBone::BeginPlay()
 	Super::BeginPlay();
 
 	FVector StartLocation = GetActorLocation();
-
 }
 
 // Called every frame

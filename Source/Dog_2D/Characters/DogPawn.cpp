@@ -28,7 +28,12 @@ ADogPawn::ADogPawn()
 
 void ADogPawn::Move(float Value)
 {
-	if (bIsInteracting)
+
+	ABaseDogPawn::Move(Value);
+
+	
+
+	/*if (bIsInteracting)
 	{
 		VelocityX = Value * MoveSpeed;
 
@@ -40,7 +45,18 @@ void ADogPawn::Move(float Value)
 	else
 	{
 		ABaseDogPawn::Move(Value);
-	}	
+	}*/	
+}
+void ADogPawn::UpdateMovementVisual(float Value)
+{
+	if (bIsInteracting)
+	{
+		SetMoveDirection(Value);
+	}
+	else
+	{
+		ABaseDogPawn::UpdateMovementVisual(Value);
+	}
 }
 
 void ADogPawn::GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const
@@ -131,23 +147,23 @@ float ADogPawn::CalculateTargetY() const
 
 void ADogPawn::CanInteractWithObjects()
 {
-	if (bIsInteracting) return;
+	if (!CollisionBody || !CollisionHead) return;
 
-	if (!bIsInteracting) Box = nullptr;
+	if (bIsCrouching || bIsJumping || bIsTakingItem || bIsInteracting) return;
+
 	if (!bIsTakingItem) Bone = nullptr;
+	if (!bIsInteracting) Box = nullptr;
 
 	if (ScanForInteractableObject(InteractHitResult) && InteractHitResult.GetActor())
 	{
 		if (AInteractiveBox* FoundBox = Cast<AInteractiveBox>(InteractHitResult.GetActor()))
 		{
 			Box = FoundBox;
-			Bone = nullptr;
 			return;
 		}
 		else if (AItemBone* FoundBone = Cast<AItemBone>(InteractHitResult.GetActor()))
 		{
 			Bone = FoundBone;
-			Box = nullptr;
 			return;
 		}
 	}
@@ -194,7 +210,7 @@ bool ADogPawn::PreCheckAlignmentSpace()
 
 	float DeltaX = CalculateAlignmentDeltaX();
 
-	if (FMath::IsNearlyEqual(DeltaX, 1.f)) return true;
+	if (FMath::IsNearlyEqual(DeltaX, AlignmentTolerance)) return true;
 
 	FHitResult HitResult;
 

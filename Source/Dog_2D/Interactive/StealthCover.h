@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "StealthCover.generated.h"
 
@@ -14,21 +13,6 @@ enum class ECoverType :uint8
 {
 	Inside UMETA(DisplayName = "Inside"),
 	Outside UMETA(DisplayName = "Outside")
-};
-
-UINTERFACE(MinimalAPI, Blueprintable)
-class UStealthCoverInterface : public UInterface
-{
-	GENERATED_BODY()
-};
-
-class DOG_2D_API IStealthCoverInterface
-{
-	GENERATED_BODY()
-
-public:
-
-	virtual void SetCurrentCover(class AStealthCover* NewCover) = 0;
 };
 
 UCLASS()
@@ -41,6 +25,8 @@ public:
 	AStealthCover();
 
 	float GetCoverZoneY() const;
+
+	ECoverType GetCoverType() const { return CoverType; }
 
 protected:
 	// Called when the game starts or when spawned
