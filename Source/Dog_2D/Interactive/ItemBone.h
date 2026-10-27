@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "ItemBone.generated.h"
-
-
-class ABaseDogPawn;
 
 
 UCLASS()
@@ -21,7 +19,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	bool TryTake(ABaseDogPawn* NewBase);
+	bool CanTakeItem(AActor* IgnoreActor);
 	void DisablePhysics();
 	void EnablePhysics();
 
@@ -32,13 +30,23 @@ protected:
 	bool IsOnGround();
 	void UpdatePhysics(float DeltaTime);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* BoneComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bone|Physics")
+	float Gravity = -980.0f;
 
-	UPROPERTY()
-	ABaseDogPawn* Base;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bone|Physics")
+	float GroundTracePadding = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bone|Sensing")
+	float TakeTraceStartOffset = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bone|Sensing")
+	float TakeTraceLength = 60.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bone|Debug")
+	TEnumAsByte<EDrawDebugTrace::Type> BoneDebugTraceMode = EDrawDebugTrace::None;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bone|Components")
+	TObjectPtr<UStaticMeshComponent> BoneComponent;
 
 	float VelocityZ;
-	float Gravity;
-
 };

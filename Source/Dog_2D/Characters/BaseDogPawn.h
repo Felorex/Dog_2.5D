@@ -80,10 +80,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual bool CanMoveWithHead(const FVector& Delta);
+	virtual void UpdateMovementVisual(float Value);
 	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const {}
 
 	virtual float CalculateTargetY() const;
-
 	virtual void CanInteractWithObjects();
 	FHitResult InteractHitResult;
 

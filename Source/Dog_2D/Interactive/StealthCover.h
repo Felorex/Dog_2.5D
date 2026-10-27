@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "StealthCover.generated.h"
 
@@ -14,21 +13,6 @@ enum class ECoverType :uint8
 {
 	Inside UMETA(DisplayName = "Inside"),
 	Outside UMETA(DisplayName = "Outside")
-};
-
-UINTERFACE(MinimalAPI, Blueprintable)
-class UStealthCoverInterface : public UInterface
-{
-	GENERATED_BODY()
-};
-
-class DOG_2D_API IStealthCoverInterface
-{
-	GENERATED_BODY()
-
-public:
-
-	virtual void SetCurrentCover(class AStealthCover* NewCover) = 0;
 };
 
 UCLASS()
@@ -42,6 +26,8 @@ public:
 
 	float GetCoverZoneY() const;
 
+	ECoverType GetCoverType() const { return CoverType; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -49,16 +35,18 @@ protected:
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 	virtual void NotifyActorEndOverlap(AActor* OtherActor) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cover Type")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cover|Settings")
 	ECoverType CoverType;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* CoverMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover|Settings")
+	float OutsideCoverClearanceOffset = 10.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* RootCollision;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UStaticMeshComponent> CoverMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* CoverCollision;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UBoxComponent> RootCollision;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cover|Components")
+	TObjectPtr<UBoxComponent> CoverCollision;
 };

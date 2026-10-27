@@ -69,17 +69,7 @@ void ABaseDogPawn::Move(float Value)
 		return;
 	}
 
-	if (!FMath::IsNearlyZero(Value, 0.1f))
-	{
-		if (Value < 0.f)
-		{
-			OnLookLeftVisual();
-		}
-		else if (Value > 0.f)
-		{
-			OnLookRightVisual();
-		}
-	}
+	UpdateMovementVisual(Value);
 
 	FVector DeltaLocation(DeltaX, 0.0f, 0.0f);
 	FHitResult MoveResult;
@@ -90,6 +80,20 @@ void ABaseDogPawn::Move(float Value)
 	{
 		DeltaX = 0.f;
 		ForceStopMovement();
+	}
+}
+void ABaseDogPawn::UpdateMovementVisual(float Value)
+{
+	if (!FMath::IsNearlyZero(Value, 0.1f))
+	{
+		if (Value < 0.f)
+		{
+			OnLookLeftVisual();
+		}
+		else if (Value > 0.f)
+		{
+			OnLookRightVisual();
+		}
 	}
 }
 bool ABaseDogPawn::CanMoveWithHead(const FVector& Delta)
@@ -373,11 +377,7 @@ bool ABaseDogPawn::WantToTakeItem()
 {
 	if (!Bone) return false;
 
-	if (Bone->TryTake(this))
-	{
-		return true;
-	}
-	return false;
+	return (Bone->CanTakeItem(this));
 }
 void ABaseDogPawn::AttachItemToMouth()
 {
@@ -387,7 +387,7 @@ void ABaseDogPawn::AttachItemToMouth()
 
 	FAttachmentTransformRules AttachRules(
 		EAttachmentRule::SnapToTarget,
-		EAttachmentRule::KeepWorld,
+		EAttachmentRule::KeepRelative,
 		EAttachmentRule::KeepWorld,
 		false
 	);

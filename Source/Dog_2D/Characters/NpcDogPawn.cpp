@@ -15,11 +15,9 @@ ANpcDogPawn::ANpcDogPawn()
 
 	bCanTakeItem = true;
 
-	PlayerFounded = false;
-	IsBarkingVisual = false;
-	IsPunishedVisual = false;
-
-	PlayerTarget = nullptr;
+	bPlayerFounded = false;
+	bIsBarkingVisual = false;
+	bIsPunishedVisual = false;
 
 	AlertTimer = 0.f;
 	BarkingTimer = 0.f;
@@ -29,11 +27,7 @@ bool ANpcDogPawn::CheckHomeLocation() const
 {
 	float CurrentLoc = GetActorLocation().X;
 
-	if (FMath::Abs(CurrentLoc - HomeX) <= 5.f && bIsGrounded)
-	{
-		return true;
-	}
-	return false;
+	return (FMath::Abs(CurrentLoc - HomeX) <= HomeArrivalThreshold && bIsGrounded);
 }
 void ANpcDogPawn::ReturnToHome()
 {
@@ -44,10 +38,10 @@ void ANpcDogPawn::ReturnToHome()
 }
 void ANpcDogPawn::TransitionToRepose()
 {
-	if (IsPunishedVisual)
+	if (bIsPunishedVisual)
 	{
-		IsPunishedVisual = false;
-		PlayerFounded = false;
+		bIsPunishedVisual = false;
+		bPlayerFounded = false;
 		OnStopPunishedVisual();
 	}
 	ForceStopMovement();
@@ -79,13 +73,12 @@ void ANpcDogPawn::CheckBoneInsideTerritory()
 	float BoneX = Bone->GetActorLocation().X;
 	float HeadX = CollisionHead->GetComponentLocation().X + (CollisionHead->GetScaledBoxExtent().X * Direction);		
 	
-	if (FMath::Abs(BoneX - HeadX) <= 10.f)
+	if (FMath::Abs(BoneX - HeadX) <= BonePickupDistance)
 	{
 		ForceStopMovement();
 		Move(0.f);
 
-		PlayerFounded = true;
-		PlayerTarget = nullptr;
+		bPlayerFounded = true;
 
 		if (bCanTakeItem)
 		{
@@ -106,6 +99,32 @@ void ANpcDogPawn::CanComeBackHome()
 	}
 }
 
+void ANpcDogPawn::CheckPlayerDetection()
+{
+	if (bPlayerFounded || !PlayerTarget) return;
+
+	if (CurrentState == EDogState::InitHome)
+	{
+		return;
+	}
+
+	if (CurrentState == EDogState::Repose)
+	{
+		if (PlayerTarget->GetActorLocation().X > TerritoryTrigger->GetActorLocation().X)
+		{
+			bPlayerFounded = true;
+
+			SetActorTickEnabled(true);
+		}
+	}
+	else
+	{
+		if ((PlayerTarget->GetActorLocation().X > TargetDisappeared->GetActorLocation().X))
+		{
+			bPlayerFounded = true;
+		}
+	}
+}
 void ANpcDogPawn::CanInteractWithObjects()
 {
 	ABaseDogPawn::CanInteractWithObjects();
@@ -115,38 +134,7 @@ void ANpcDogPawn::CanInteractWithObjects()
 		CheckBoneInsideTerritory();
 	}
 
-	if (PlayerFounded) return;
-
-	ADogPawn* Player = Cast<ADogPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-
-	if (!Player) return;	
-
-	if (Player)
-	{
-		if (CurrentState == EDogState::InitHome)
-		{
-			return;
-		}
-
-		if (CurrentState == EDogState::Repose)
-		{
-			if (Player->GetActorLocation().X > TerritoryTrigger->GetActorLocation().X)
-			{
-				PlayerTarget = Player;
-				PlayerFounded = true;
-
-				SetActorTickEnabled(true);
-			}
-		}
-		else
-		{
-			if ((Player->GetActorLocation().X > TargetDisappeared->GetActorLocation().X))
-			{
-				PlayerTarget = Player;
-				PlayerFounded = true;
-			}
-		}
-	}
+	CheckPlayerDetection();
 }
 void ANpcDogPawn::StartToChase()
 {
@@ -171,17 +159,9 @@ float ANpcDogPawn::GetDistanceToTarget() const
 bool ANpcDogPawn::CheckBiting() const
 {
 	if (!PlayerTarget) return false;
+	if (PlayerTarget->GetIsScared()) return false;
 
-	if (PlayerTarget->GetIsScared())
-	{
-		return false;
-	}
-
-	if (GetDistanceToTarget() <= 8.f)
-	{
-		return true;
-	}
-	return false;
+	return (GetDistanceToTarget() <= BitingDistance);
 }
 bool ANpcDogPawn::CheckTargetInTriggerZone() const
 {
@@ -236,9 +216,9 @@ void ANpcDogPawn::StartBarking(float DeltaTime)
 {
 	BarkingTimer += DeltaTime;
 
-	if (IsBarkingVisual) return;
+	if (bIsBarkingVisual) return;
 
-	IsBarkingVisual = true;
+	bIsBarkingVisual = true;
 
 	OnBarkingVisual();	
 }
@@ -255,9 +235,9 @@ void ANpcDogPawn::TransitionToChase()
 }
 void ANpcDogPawn::TransitionToAlert()
 {
-	if (IsBarkingVisual)
+	if (bIsBarkingVisual)
 	{
-		IsBarkingVisual = false;
+		bIsBarkingVisual = false;
 		OnStopBarkingVisual();
 		BarkingTimer = 0.f;
 		OnBarkingState.Broadcast(false);
@@ -291,21 +271,20 @@ void ANpcDogPawn::StartToAlert(float DeltaTime)
 		{
 			AlertTimer += DeltaTime;
 
-			if (AlertTimer > 1.f)
+			if (AlertTimer > AlertToChaseDelay)
 			{
 				AlertTimer = 0;
 				TransitionToChase();
 			}
 		}
 	}
-	else if (!CheckTargetVisible())
+	else
 	{
 		AlertTimer += DeltaTime;
 
-		if (AlertTimer >= 3.f)
+		if (AlertTimer >= LostTargetReturnDelay)
 		{
-			PlayerTarget = nullptr;
-			PlayerFounded = false;
+			bPlayerFounded = false;
 			AlertTimer = 0.f;
 
 			CurrentState = EDogState::ReturnToDoghouse;
@@ -315,20 +294,19 @@ void ANpcDogPawn::StartToAlert(float DeltaTime)
 
 void ANpcDogPawn::TransitionToPunished()
 {
-	if (IsPunishedVisual) return;
+	if (bIsPunishedVisual) return;
 
 	ForceStopMovement();
 	Move(0.f);
-	if (IsBarkingVisual)
+	if (bIsBarkingVisual)
 	{
-		IsBarkingVisual = false;
+		bIsBarkingVisual = false;
 		OnStopBarkingVisual();
 		BarkingTimer = 0.f;
 		OnBarkingState.Broadcast(false);
 	}
-	PlayerTarget = nullptr;
-	PlayerFounded = true;
-	IsPunishedVisual = true;
+	bPlayerFounded = true;
+	bIsPunishedVisual = true;
 	OnPunishedVisual();
 	CurrentState = EDogState::Punished;
 }
@@ -337,9 +315,9 @@ void ANpcDogPawn::Biting()
 {
 	if (!PlayerTarget) return;
 
-	if (IsBarkingVisual)
+	if (bIsBarkingVisual)
 	{
-		IsBarkingVisual = false;
+		bIsBarkingVisual = false;
 		OnStopBarkingVisual();
 	}
 
@@ -355,7 +333,14 @@ void ANpcDogPawn::BeginPlay()
 
 	HomeX = GetActorLocation().X;
 
-
+	if (GetWorld())
+	{
+		APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+		if (Player)
+		{
+			PlayerTarget = Cast<ADogPawn>(Player);
+		}
+	}
 }
 
 void ANpcDogPawn::Tick(float DeltaTime)

@@ -3,6 +3,7 @@
 
 #include "Interactive/StealthCover.h"
 #include "Kismet/GameplayStatics.h"
+#include "Characters/DogPawn.h"
 
 
 // Sets default values
@@ -35,12 +36,11 @@ void AStealthCover::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	AActor::NotifyActorBeginOverlap(OtherActor);
 
-	if (OtherActor)
+	if (OtherActor && (OtherActor != this))
 	{
-		IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
-		if (StealthAgent)
+		if (ADogPawn* Player=Cast<ADogPawn>(OtherActor))
 		{
-			StealthAgent->SetCurrentCover(this);
+			Player->SetCurrentCover(this);
 		}
 	}
 }
@@ -49,12 +49,11 @@ void AStealthCover::NotifyActorEndOverlap(AActor* OtherActor)
 {
 	AActor::NotifyActorEndOverlap(OtherActor);
 
-	if (OtherActor)
+	if (OtherActor && (OtherActor != this))
 	{
-		IStealthCoverInterface* StealthAgent = Cast<IStealthCoverInterface>(OtherActor);
-		if (StealthAgent)
+		if (ADogPawn* Player = Cast<ADogPawn>(OtherActor))
 		{
-			StealthAgent->SetCurrentCover(nullptr);
+			Player->SetCurrentCover(nullptr);
 		}
 	}
 }
@@ -72,7 +71,7 @@ float AStealthCover::GetCoverZoneY() const
 		}
 		else // ECoverType::Outside
 		{
-			return BoxLocation.Y + BoxExtent.Y + 10.f;
+			return BoxLocation.Y + BoxExtent.Y + OutsideCoverClearanceOffset;
 		}
 	}
 	return GetActorLocation().Y;
@@ -80,8 +79,7 @@ float AStealthCover::GetCoverZoneY() const
 // Called when the game starts or when spawned
 void AStealthCover::BeginPlay()
 {
-	Super::BeginPlay();	
-
+	Super::BeginPlay();
 }
 
 

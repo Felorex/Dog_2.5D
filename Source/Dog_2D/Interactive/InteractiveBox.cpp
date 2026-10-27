@@ -4,7 +4,7 @@
 #include "Interactive/InteractiveBox.h"
 #include "Characters/DogPawn.h"
 #include "Components/BoxComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
+
 
 // Sets default values
 AInteractiveBox::AInteractiveBox()
@@ -19,11 +19,10 @@ AInteractiveBox::AInteractiveBox()
 	}
 	Player = nullptr;
 	bIsFollowing = false;
-	IsBoxBlocked = false;
+	bIsBoxBlocked = false;
 
 	BoxVelocityX = 0.0f;
-	BoxVelocityZ = 0.0f;
-	GravityScale = 2000.0f;
+	BoxVelocityZ = 0.0f;	
 }
 
 bool AInteractiveBox::IsOnGround()
@@ -33,7 +32,7 @@ bool AInteractiveBox::IsOnGround()
 	FVector Start = BoxComponent->GetComponentLocation();
 
 	float HalfHeight = BoxComponent->Bounds.BoxExtent.Z;
-	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + 2.0f);
+	FVector End = Start - FVector(0.0f, 0.0f, HalfHeight + GroundTracePadding);
 
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
@@ -47,13 +46,12 @@ bool AInteractiveBox::IsOnGround()
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic),
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		BoxDebugTraceMode.GetValue(),
 		HitResult,
 		true
 	);
 
 	return bHit && HitResult.IsValidBlockingHit();
-
 }
 
 float AInteractiveBox::GetBoxEdgeY() const
@@ -106,7 +104,7 @@ void AInteractiveBox::UpdatePhysics(float DeltaTime)
 	{
 		BoxVelocityZ -= GravityScale * DeltaTime;
 
-		if (bIsFollowing && BoxVelocityZ < -300.0f && Player)
+		if (bIsFollowing && BoxVelocityZ < BreakInteractFallSpeed && Player)
 		{
 			Player->InteractReleased();
 		}
@@ -127,20 +125,19 @@ void AInteractiveBox::UpdateMovementX()
 	}
 
 	BoxVelocityX = 0.0f;
-
 }
 
 void AInteractiveBox::CheckWallCollision(const FHitResult& Hit)
 {
 	if (!Player || !bIsFollowing)
 	{
-		IsBoxBlocked = false;
+		bIsBoxBlocked = false;
 		return;
 	}
 
-	if (IsBoxBlocked && Player->GetIsPulling())
+	if (bIsBoxBlocked && Player->GetIsPulling())
 	{
-			IsBoxBlocked = false;
+			bIsBoxBlocked = false;
 			return;
 	}
 
@@ -152,12 +149,12 @@ void AInteractiveBox::CheckWallCollision(const FHitResult& Hit)
 		if ((BoxVelocityX > 0.0f && Hit.Normal.X < 0.0f) || 
 			(BoxVelocityX < 0.0f && Hit.Normal.X > 0.0f))
 		{
-			IsBoxBlocked = true;
+			bIsBoxBlocked = true;
 			Player->ForceStopMovement();
 			return;
 		}
 	}
-	IsBoxBlocked = false;
+	bIsBoxBlocked = false;
 }
 
 void AInteractiveBox::StartFollow(ADogPawn* NewPlayer)

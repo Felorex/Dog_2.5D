@@ -35,37 +35,34 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(BlueprintAssignable, Category = "Dog_AI")
+	UPROPERTY(BlueprintAssignable, Category = "Dog|AI Events")
 	FOnBarkingState OnBarkingState;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Dog_AI")
+	UPROPERTY(BlueprintReadOnly, Category = "Dog|AI Status")
 	EDogState CurrentState;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Dog_AI")
-	ADogPawn* PlayerTarget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|AI Environment")
+	TObjectPtr<AActor> TerritoryTrigger;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
-	AActor* TerritoryTrigger;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|AI Environment")
+	TObjectPtr<AActor> TargetDisappeared;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
-	AActor* TargetDisappeared;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog_AI")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|AI Setup")
 	float TerritoryRadius;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "BiteVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|AI Visuals")
 	void OnBitingVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "BarkVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|AI Visuals")
 	void OnBarkingVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "BarkVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|AI Visuals")
 	void OnStopBarkingVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "PunishedVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|AI Visuals")
 	void OnPunishedVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "PunishedVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|AI Visuals")
 	void OnStopPunishedVisual();
 
 	FVector DoghouseLocation;
@@ -76,9 +73,28 @@ public:
 
 protected:
 
-	virtual void BeginPlay() override;
-	
+	virtual void BeginPlay() override;	
 	virtual void CanInteractWithObjects() override;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Dog|AI Target")
+	TObjectPtr<ADogPawn> PlayerTarget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|AI Balance")
+	float HomeArrivalThreshold = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|AI Balance")
+	float BonePickupDistance = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|AI Balance")
+	float BitingDistance = 8.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|AI Balance")
+	float AlertToChaseDelay = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|AI Balance")
+	float LostTargetReturnDelay = 3.f;
+
+	void CheckPlayerDetection();
 
 	void StartToChase();
 	void ChaseMovement();
@@ -92,8 +108,7 @@ protected:
 	void TransitionToRepose();
 	void TransitionToAlert();
 	void TransitionToBarking();
-	void TransitionToChase();
-	
+	void TransitionToChase();	
 
 	void ReturnToHome();
 
@@ -111,9 +126,9 @@ protected:
 	bool IsAtLeashEdge() const;
 
 	bool bCanTakeItem;
-	bool PlayerFounded;
-	bool IsBarkingVisual;
-	bool IsPunishedVisual;
+	bool bPlayerFounded;
+	bool bIsBarkingVisual;
+	bool bIsPunishedVisual;
 
 	float HomeX;
 	float AlertTimer;

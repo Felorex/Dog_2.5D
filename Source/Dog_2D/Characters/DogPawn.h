@@ -12,9 +12,10 @@
 #include "DogPawn.generated.h"    
 
 class AHouseAlarmActor;
+class AStealthCover;
 
 UCLASS()
-class DOG_2D_API ADogPawn : public ABaseDogPawn, public IStealthCoverInterface
+class DOG_2D_API ADogPawn : public ABaseDogPawn
 {
 	GENERATED_BODY()
 
@@ -22,50 +23,41 @@ public:
 	// Sets default values for this pawn's properties
 	ADogPawn();	
 
-	virtual void SetCurrentCover(class AStealthCover* NewCover) override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void Move(float Value) override;
-
 	virtual void DoJump() override;
-
 	virtual void OnCrouchPressed() override;
+	virtual void ForceStopMovement() override;	
 
-	virtual void ForceStopMovement() override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ineract_Movement")
-	bool bIsInteracting;
-
-	UFUNCTION(BlueprintCallable, Category = "Interact")
+	UFUNCTION(BlueprintCallable, Category = "Dog|Interact")
 	void InteractPressed();
 
-	UFUNCTION(BlueprintCallable, Category = "Interact")
+	UFUNCTION(BlueprintCallable, Category = "Dog|Interact")
 	void InteractReleased();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|InteractVisual")
 	void OnPushVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|InteractVisual")
 	void OnPullVisual();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "InteractVisual")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dog|InteractVisual")
 	void OnStopInteractVisual();
 
-	UFUNCTION(BlueprintCallable, Category = "Ineract_Movement")
+	UFUNCTION(BlueprintCallable, Category = "Dog|Movement")
 	void SetMoveDirection(float Value);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scary_Event")
-	AActor* StopScaryEventZone;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|Scary Event")
+	TObjectPtr<AActor> StopScaryEventZone;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Safe_Zone")
-	AStealthCover* StealthCover;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dog|Stealth")
+	TObjectPtr<AStealthCover> StealthCover;
+
+	void SetCurrentCover(AStealthCover* NewCover);
 
 	void ScaredRun(float DeltaTime);
-
 	void SetIsScared(bool NewIsScared);
-
 	bool GetIsScared() const;
 
 	float GetVelocityX() const { return VelocityX; }
@@ -79,10 +71,10 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual bool CanMoveWithHead(const FVector& Delta) override;
+	virtual void UpdateMovementVisual(float Value) override;
 	virtual void GetAdditionalActorsToIgnore(TArray<AActor*>& Actors) const override;
 	
 	virtual float CalculateTargetY() const override;
-
 	virtual void CanInteractWithObjects() override;
 
 
@@ -90,13 +82,16 @@ protected:
 	void HandleHouseIsLightingState(bool bIsLighting);
 
 	UPROPERTY()
-	USceneComponent* CameraComp;
+	TObjectPtr<USceneComponent> CameraComp;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event", meta = (BlueprintProtected = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event")
 	float ScarySpeed = 400.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event", meta = (BlueprintProtected = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Scary Event")
 	float ScaryStopDistanceThreshold = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dog|Interact")
+	float AlignmentTolerance = 1.f;
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Dog|Environment")
 	TObjectPtr<AHouseAlarmActor> HouseAlarmSystem;
@@ -110,12 +105,13 @@ protected:
 
 	float GetBodyEdgeY() const;
 
-	bool HouseIsLightingUp;
-	bool IsInCover;
+	bool bIsInteracting;
+
+	bool bHouseIsLightingUp;
+	bool bIsInCover;
 
 	bool bIsPushing;
 	bool bIsPulling;
 
-	bool IsScared;
-	
+	bool bIsScared;	
 };
