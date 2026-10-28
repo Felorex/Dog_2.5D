@@ -40,11 +40,24 @@ Pushing and pulling a box
 
 
 
+https://github.com/user-attachments/assets/29fd7b03-ef2e-419f-9322-1150aad29ef6
+
+
+
+
 Hiding in cover
 
 
 
+https://github.com/user-attachments/assets/954bc918-9eff-4cab-869f-55c82e56b7d4
+
+
+
 NPC guard dog
+
+
+
+https://github.com/user-attachments/assets/16c4d43c-03df-4bde-9e24-40fbb89be8f2
 
 
 ---
