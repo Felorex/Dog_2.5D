@@ -346,7 +346,7 @@ void ANpcDogPawn::BeginPlay()
 void ANpcDogPawn::Tick(float DeltaTime)
 {
 	ABaseDogPawn::Tick(DeltaTime);
- 
+
 	switch (CurrentState)	
 	{
 	case EDogState::InitHome:

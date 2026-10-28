@@ -28,24 +28,7 @@ ADogPawn::ADogPawn()
 
 void ADogPawn::Move(float Value)
 {
-
-	ABaseDogPawn::Move(Value);
-
-	
-
-	/*if (bIsInteracting)
-	{
-		VelocityX = Value * MoveSpeed;
-
-		SetMoveDirection(Value);
-
-		FVector DeltaLocation(VelocityX * GetWorld()->GetDeltaSeconds(), 0.f, 0.f);
-		AddActorWorldOffset(DeltaLocation, true);
-	}
-	else
-	{
-		ABaseDogPawn::Move(Value);
-	}*/	
+	ABaseDogPawn::Move(Value);	
 }
 void ADogPawn::UpdateMovementVisual(float Value)
 {
@@ -132,7 +115,9 @@ float ADogPawn::CalculateTargetY() const
 {
 	if (bIsInCover && StealthCover)
 	{
-		return StealthCover->GetCoverZoneY();
+		float Cover = StealthCover->GetCoverZoneY();
+		float Dog = CollisionBody->GetUnscaledBoxExtent().Y;
+		return Cover + Dog;
 	}
 
 	if (bIsInteracting && Box)
@@ -297,6 +282,11 @@ bool ADogPawn::GetIsScared() const
 void ADogPawn::ScaredRun(float DeltaTime)
 {
 	if (!StopScaryEventZone || !bIsScared) return;
+
+	if (bIsInteracting)
+	{
+		InteractReleased();
+	}
 
 	float DogX = GetActorLocation().X;
 	float SafeX = StopScaryEventZone->GetActorLocation().X;
